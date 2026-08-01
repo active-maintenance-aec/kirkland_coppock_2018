@@ -1,0 +1,11 @@
+file,dataverse_file_id,file_persistent_id,bytes,md5_served,md5_published,unf,served_as
+base_categories.RData,3027903,doi:10.7910/DVN/WSUHI3/0GRYKT,514,713953ddff4d902cb4f22d2ca5de8baa,713953ddff4d902cb4f22d2ca5de8baa,UNF:6:Ytcu2GXjWatTQAxu/wnSYw==,base_categories.tab
+compare_samples_replication.R,3027899,doi:10.7910/DVN/WSUHI3/OWIOJ6,4664,0fe2f8874cd58b1b2f2c7bda9db10358,0fe2f8874cd58b1b2f2c7bda9db10358,,compare_samples_replication.R
+mayors_source.R,3027893,doi:10.7910/DVN/WSUHI3/7Z5ZEX,7696,882c7d6036229a6095d4d6ebc4affe59,882c7d6036229a6095d4d6ebc4affe59,,mayors_source.R
+mturk_codebook.txt,3027904,doi:10.7910/DVN/WSUHI3/COJJXB,7434,6871c4b4a77ed6a973e44b2fd765f700,6871c4b4a77ed6a973e44b2fd765f700,,mturk_codebook.txt
+mturk_replication.R,3027898,doi:10.7910/DVN/WSUHI3/KZM59J,29404,584a3f4da0b42b58f988a94ada3ea279,584a3f4da0b42b58f988a94ada3ea279,,mturk_replication.R
+mturk_replication.RData,3027908,doi:10.7910/DVN/WSUHI3/75CLKF,93589,bccd08779907b1d21c29768467f2a69c,bccd08779907b1d21c29768467f2a69c,UNF:6:ZEtoZWN+qpXqP9zj8DiEVA==,mturk_replication.tab
+README.txt,3027896,doi:10.7910/DVN/WSUHI3/2ITVYH,1109,a5f1cb69a2f64863f5c341428af9ef49,a5f1cb69a2f64863f5c341428af9ef49,,README.txt
+yougov_codebook.txt,3027897,doi:10.7910/DVN/WSUHI3/HDYNCD,7714,149e8e29020fd9e8363775c0c230b7f3,149e8e29020fd9e8363775c0c230b7f3,,yougov_codebook.txt
+yougov_replication.R,3027902,doi:10.7910/DVN/WSUHI3/16SGU2,29736,5f38ccc10d9a7adac90abb6500b17d87,5f38ccc10d9a7adac90abb6500b17d87,,yougov_replication.R
+yougov_replication.xlsx,3027894,doi:10.7910/DVN/WSUHI3/GHW3PW,84264,e12af25c42bef699218050a934d4eced,e12af25c42bef699218050a934d4eced,UNF:6:HLUKJmC8rs1Yn9oUqqMgIA==,yougov_replication.tab

@@ -1,0 +1,38 @@
+# kirkland_coppock_2018/run_all.R
+# Runs the whole reproduction in order: fetch and verify the deposited archive, then
+# every published table, then every published figure, then the in-text quantities.
+# Every script is self-contained and can also be run on its own.
+
+library(here)
+here::i_am("run_all.R")
+
+# Deposited archive ----
+# Downloads from Dataverse on a fresh clone; verifies checksums either way.
+source(here::here("download_original.R"))
+
+# Tables ----
+# table_1 reads the recovered observational data, which the deposit omits.
+source(here::here("maintained", "table_1_observational_experience.R"))
+source(here::here("maintained", "table_a1_party_identification.R"))
+
+# Main text figures ----
+source(here::here("maintained", "figure_3_mturk_main_candidate_pref.R"))
+source(here::here("maintained", "figure_4_yougov_main_candidate_pref.R"))
+source(here::here("maintained", "figure_5_mturk_het_fx_candidate_pref.R"))
+source(here::here("maintained", "figure_6_yougov_het_fx_candidate_pref.R"))
+source(here::here("maintained", "figure_7_mturk_het_fx_competence.R"))
+source(here::here("maintained", "figure_8_yougov_het_fx_competence.R"))
+
+# Appendix figures ----
+source(here::here("maintained", "figure_b1_mturk_satisficing.R"))
+source(here::here("maintained", "figure_b2_yougov_satisficing.R"))
+source(here::here("maintained", "figure_c3_mturk_main_competence.R"))
+source(here::here("maintained", "figure_c4_yougov_main_competence.R"))
+
+# In-text quantities ----
+source(here::here("maintained", "text_observational_experience_advantage.R"))
+source(here::here("maintained", "text_mturk_yougov_correlation.R"))
+
+# Ground truth ----
+# Rebuilds the comparison table from the outputs above, so it cannot go stale.
+source(here::here("ground_truth", "build_ground_truth.R"))

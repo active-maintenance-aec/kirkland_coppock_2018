@@ -1,0 +1,5 @@
+specification,method,n_estimates,correlation
+archive (YouGov unweighted),pearson,32,0.9494122236005844
+archive (YouGov unweighted),spearman,32,0.8020527859237536
+YouGov weighted,pearson,32,0.9183653272345063
+YouGov weighted,spearman,32,0.7100439882697948

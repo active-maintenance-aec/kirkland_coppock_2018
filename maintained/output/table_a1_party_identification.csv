@@ -1,0 +1,7 @@
+sample,party_id,n_respondents,proportion
+mTurk,Democrat,1204,0.581
+mTurk,Independent,1204,0.164
+mTurk,Republican,1204,0.254
+YouGov,Democrat,1200,0.385
+YouGov,Independent,1200,0.27
+YouGov,Republican,1200,0.346

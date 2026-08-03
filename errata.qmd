@@ -25,15 +25,45 @@ out <- function(f) read_csv(here("maintained", "output", f), show_col_types = FA
 
 advantage <- out("text_observational_experience_advantage.csv")
 dataset <- out("text_observational_dataset_description.csv")
+
 figure_3_np <- out("figure_3_mturk_main_candidate_pref.csv") |>
   filter(panel == "Nonpartisan", !is.na(estimate))
 pol_np <- filter(figure_3_np, coef_group == "Pol. Experience")
 largest_other <- max(abs(figure_3_np$estimate[figure_3_np$coef_group != "Pol. Experience"]))
+
+# Race preferences by respondent party, both samples, nonpartisan elections.
+race <- bind_rows(
+  mutate(out("figure_5_mturk_het_fx_candidate_pref.csv"), sample = "Mechanical Turk"),
+  mutate(out("figure_6_yougov_het_fx_candidate_pref.csv"), sample = "YouGov")
+) |>
+  filter(panel == "Nonpartisan", coef_group == "Race", !is.na(estimate))
+
+race_pp <- function(sample_label, party_label, level) {
+  100 * race$estimate[race$sample == sample_label & race$party == party_label &
+                        race$label == level]
+}
+
+race_list <- function(sample_label, party_label) {
+  rows <- filter(race, sample == sample_label, party == party_label)
+  paste0(rows$label, " ", sprintf("%+.1f", 100 * rows$estimate), collapse = ", ")
+}
+
+# The difference column of Figure 7: political experience on competence ratings.
+competence_diff <- out("figure_7_mturk_het_fx_competence.csv") |>
+  filter(panel == "Difference", coef_group == "Pol. Experience", !is.na(estimate)) |>
+  mutate(clears_zero = conf.low > 0 | conf.high < 0)
+
+clears <- function(party_label) {
+  sum(competence_diff$clears_zero[competence_diff$party == party_label])
+}
+
+n_per_party <- sum(competence_diff$party == "Democrats")
+republican_mayor <- filter(competence_diff, party == "Republicans", label == "Mayor")
 ```
 
-This note lists four misstated numbers in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** Each is recorded because a reader who quoted the sentence would be quoting a number the article's own data do not support.
+This note lists six errors in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** Four are misstated numbers and two are descriptions of the figures that the estimates behind those figures do not support. Each is recorded because a reader who quoted the sentence would be quoting something the article's own data do not bear out.
 
-All four are in the two paragraphs that introduce the observational and experimental evidence. Every corrected value below is computed from the data at the time this document is rendered: the conjoint estimates from the deposited replication archive ([10.7910/DVN/WSUHI3](https://doi.org/10.7910/DVN/WSUHI3)), and the mayoral election data from the file the authors supplied, which the deposit omits. The code supporting each correction is at [github.com/active-maintenance-aec/kirkland_coppock_2018](https://github.com/active-maintenance-aec/kirkland_coppock_2018).
+Every corrected value below is computed from the data at the time this document is rendered: the conjoint estimates from the deposited replication archive ([10.7910/DVN/WSUHI3](https://doi.org/10.7910/DVN/WSUHI3)), and the mayoral election data from the file the authors supplied, which the deposit omits. The code supporting each correction is at [github.com/active-maintenance-aec/kirkland_coppock_2018](https://github.com/active-maintenance-aec/kirkland_coppock_2018).
 
 ## 1. The two ballot types are transposed in the experience-advantage comparison
 
@@ -45,7 +75,27 @@ Corrected:
 
 Both percentages are right and the labels attached to them are the wrong way round. The data give `r sprintf("%.1f", advantage$pct_nonpartisan)` per cent in nonpartisan elections and `r sprintf("%.1f", advantage$pct_partisan)` per cent in partisan elections, across the `r advantage$n_elections_total` elections the sentence identifies. The direction matters here, because the article's own argument is that nonpartisan ballots favour the more experienced candidate: the published sentence reports the gap running the other way.
 
-## 2. The p-value on that comparison reproduces under no test
+## 2. The racial preference pattern holds in one sample and not the other
+
+> Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates.
+
+Corrected:
+
+> Republican respondents marginally prefer white candidates **in the YouGov sample**, while Democrats marginally prefer nonwhite candidates **in both**.
+
+The Democratic half of the sentence holds everywhere: all six estimates are positive, `r race_list("Mechanical Turk", "Democrats")` percentage points on Mechanical Turk and `r race_list("YouGov", "Democrats")` on YouGov, the last of those being `r sprintf("%+.3f", race_pp("YouGov", "Democrats", "Hispanic"))` rather than a true zero. The Republican half holds only on YouGov, where the three estimates are `r race_list("YouGov", "Republicans")`. On Mechanical Turk, Republican respondents prefer **Asian** candidates to white candidates by `r sprintf("%.1f", race_pp("Mechanical Turk", "Republicans", "Asian"))` percentage points, while preferring white candidates to Black ones by `r sprintf("%.1f", -race_pp("Mechanical Turk", "Republicans", "Black"))` and to Hispanic ones by `r sprintf("%.1f", -race_pp("Mechanical Turk", "Republicans", "Hispanic"))`. A reader taking the sentence as a general finding about Republican respondents would be taking a pattern that reverses on one of the paper's two samples.
+
+## 3. Republican respondents do show a competence gap by election type
+
+> As shown in the difference column, Democratic respondents (**but not Republican respondents**) rate such candidates as even more competent in the absence of party labels.
+
+Corrected:
+
+> As shown in the difference column, Democratic respondents (**and, for candidates who have been mayor, Republican respondents**) rate such candidates as even more competent in the absence of party labels.
+
+The parenthetical reads the Republican half of Figure 7's difference column as null, and one of its four estimates is not. `r clears("Democrats")` of the `r n_per_party` Democratic intervals exclude zero and so does `r clears("Republicans")` of the `r n_per_party` Republican ones: Republican respondents rate a candidate who has been mayor `r sprintf("%.2f", republican_mayor$estimate)` points more competent in nonpartisan than in partisan elections, with a 95 per cent interval of `r sprintf("%.2f", republican_mayor$conf.low)` to `r sprintf("%.2f", republican_mayor$conf.high)`. The contrast the sentence draws is one of degree rather than of presence.
+
+## 4. The p-value on the experience-advantage comparison reproduces under no test
 
 > This difference is not statistically significant (p = **0.791**).
 
@@ -55,7 +105,7 @@ Corrected:
 
 The corrected figure is a regression of the more-experienced-candidate-wins indicator on ballot type with HC2 standard errors. A chi-squared test of the same two-by-two table gives `r sprintf("%.3f", advantage$p_value_chisq)`, and no standard test of this comparison returns 0.791. The conclusion the sentence draws is unaffected: the difference of `r sprintf("%.1f", advantage$difference_pp)` percentage points is not distinguishable from zero on any of them.
 
-## 3. The number of municipalities in the mayoral election dataset
+## 5. The number of municipalities in the mayoral election dataset
 
 > This dataset covers **225** unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.
 
@@ -65,7 +115,7 @@ Corrected:
 
 The file carries `r dataset$n_municipalities` distinct FIPS place codes across its `r dataset$n_elections` elections, and it is the file the sentence describes: the election count and the `r dataset$year_first` to `r dataset$year_last` span both reproduce exactly. No other reading of it returns 225 either, since municipalities holding more than one election number 171, the subset used later in the paragraph covers 216, and truncating the place code to five digits gives 213.
 
-## 4. The range of political experience effects is stated more tightly than the estimates support
+## 6. The range of political experience effects is stated more tightly than the estimates support
 
 > Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of **25--30** percentage points.
 

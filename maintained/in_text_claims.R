@@ -21,11 +21,16 @@
 #   pipeline has already produced the estimates, and everything here is a derivation
 #   from them.
 #
-#   Each block carries the article's sentence verbatim and a "# covers:" line naming
-#   the claim ids it accounts for. ground_truth/build_ground_truth.R runs this file
-#   non-interactively, reads the claim ids back off the CLAIM lines it prints, and
-#   halts unless they are exactly the declared ids and cover every pipeline and
-#   descriptive row of ground_truth/published_claims.csv.
+#   Each block carries the article's sentence verbatim, then the call that prints the
+#   claim. The claim id is the first argument of that call and is printed on the line
+#   the call emits: "CLAIM <id> = <value> || <label>". That printed line is the link
+#   to ground_truth/published_claims.csv, and it is the only link.
+#   ground_truth/build_ground_truth.R runs this file non-interactively, reads the ids
+#   back off the lines it actually printed, and halts unless they cover every pipeline
+#   and descriptive row of the extraction and name nothing the article does not claim.
+#   Nothing is read out of a comment: a comment naming a claim id would be a second
+#   copy of the link that could go stale on its own, which is what a gate reading the
+#   program rather than the text exists to avoid.
 #
 #   Claims classified definitional, structural or transcribed appear here only where
 #   the pipeline can reach the quantity. A scale endpoint the data records is read
@@ -42,8 +47,13 @@ options(width = 200)
 
 out <- function(f) read_csv(here("maintained", "output", f), show_col_types = FALSE)
 
+# value_paper holds the string the article prints, so the column is read as text. Left
+# to guess, readr would turn a column of numeric-looking entries into doubles and drop
+# exactly the printed precision the string is there to preserve: 0.150 would come back
+# as 0.15 and 1,204 as 1204.
 published_claims <- read_csv(here("ground_truth", "published_claims.csv"),
-                             show_col_types = FALSE)
+                             col_types = cols(value_paper = col_character(),
+                                              .default = col_guess()))
 
 table_1 <- out("table_1_observational_experience.csv")
 table_a1 <- out("table_a1_party_identification.csv")
@@ -66,18 +76,20 @@ figure_c3 <- out("figure_c3_mturk_main_competence.csv")
 figure_c4 <- out("figure_c4_yougov_main_competence.csv")
 
 # Reporting ----
-# Every claim prints one line beginning "CLAIM", carrying the id the coverage gate
-# reads back. Evidence lines are indented and carry no id, so a claim whose evidence
-# runs to several values still counts once.
+# Every claim prints one line in the form "CLAIM <id> = <value> || <label>". The id
+# comes first because the coverage gate reads it back, and the label follows the value
+# because a reader scanning the output is looking for the number. Evidence lines are
+# indented and carry no id, so a claim whose evidence runs to several values still
+# counts once.
 report_value <- function(claim_id, label, value, digits = 1) {
   stopifnot(length(value) == 1, !is.na(value))
-  cat("CLAIM ", claim_id, " | ", label, ": ",
-      formatC(value, digits = digits, format = "f"), "\n", sep = "")
+  cat("CLAIM ", claim_id, " = ", formatC(value, digits = digits, format = "f"),
+      " || ", label, "\n", sep = "")
 }
 
 report_text <- function(claim_id, label, value) {
   stopifnot(length(value) == 1, !is.na(value))
-  cat("CLAIM ", claim_id, " | ", label, ": ", value, "\n", sep = "")
+  cat("CLAIM ", claim_id, " = ", value, " || ", label, "\n", sep = "")
 }
 
 evidence <- function(text) cat("    evidence: ", text, "\n", sep = "")
@@ -127,7 +139,6 @@ interval_multiplier <- function(df) {
 # how subjects use information about candidate experience in both samples. In
 # nonpartisan elections, we find that the effect of candidate experience on vote
 # choice is approximately 10 percentage points higher than in partisan elections."
-# covers: intro_experience_gap_pp
 intro_gap <- estimates(figure_3, panel == "Difference", coef_group == "Pol. Experience")
 report_value("intro_experience_gap_pp",
              "Introduction, political experience effect, nonpartisan minus partisan (pp)",
@@ -136,7 +147,6 @@ evidence(estimate_list(intro_gap, digits = 1, scale = 100))
 
 # "Our survey respondents have to choose between two hypothetical candidates on the
 # basis of the five or six pieces of information we provide."
-# covers: intro_information_pieces_min intro_information_pieces_max
 report_value("intro_information_pieces_min",
              "Introduction, attributes displayed in a nonpartisan election (MTurk)",
              design_value("mTurk", "attributes_nonpartisan"), digits = 0)
@@ -155,7 +165,6 @@ report_value("intro_information_pieces_max",
 # mayoral elections held between 1945 and 2007. This dataset covers 225 unique
 # municipalities and records background characteristics of winners and runners-up,
 # contextual information such as electoral rules, and electoral outcomes."
-# covers: obs_n_elections obs_year_first obs_year_last obs_n_municipalities
 report_value("obs_n_elections", "Observational dataset, mayoral elections",
              dataset$n_elections, digits = 0)
 report_value("obs_year_first", "Observational dataset, first election year",
@@ -170,22 +179,6 @@ evidence(paste0("distinct FIPS place codes across the ",
 # Table 1, political experience of the winning candidate in partisan and nonpartisan
 # US mayoral elections, as this pipeline rebuilds it from the recovered data. Cells
 # are read out one at a time so each carries its own claim id.
-# covers: table_1_no_previous_political_experience_n_nonpartisan
-# covers: table_1_no_previous_political_experience_pct_nonpartisan
-# covers: table_1_no_previous_political_experience_n_partisan
-# covers: table_1_no_previous_political_experience_pct_partisan
-# covers: table_1_city_legislator_n_nonpartisan table_1_city_legislator_pct_nonpartisan
-# covers: table_1_city_legislator_n_partisan table_1_city_legislator_pct_partisan
-# covers: table_1_county_legislator_n_nonpartisan table_1_county_legislator_pct_nonpartisan
-# covers: table_1_county_legislator_n_partisan table_1_county_legislator_pct_partisan
-# covers: table_1_state_legislator_n_nonpartisan table_1_state_legislator_pct_nonpartisan
-# covers: table_1_state_legislator_n_partisan table_1_state_legislator_pct_partisan
-# covers: table_1_us_legislator_n_nonpartisan table_1_us_legislator_pct_nonpartisan
-# covers: table_1_us_legislator_n_partisan table_1_us_legislator_pct_partisan
-# covers: table_1_mayor_n_nonpartisan table_1_mayor_pct_nonpartisan
-# covers: table_1_mayor_n_partisan table_1_mayor_pct_partisan
-# covers: table_1_total_n_nonpartisan table_1_total_pct_nonpartisan
-# covers: table_1_total_n_partisan table_1_total_pct_partisan
 table_1_slugs <- c(
   "No previous political experience" = "no_previous_political_experience",
   "City legislator" = "city_legislator",
@@ -209,11 +202,9 @@ walk2(table_1_long$claim_id, seq_len(nrow(table_1_long)),
       \(id, i) report_value(id, table_1_long$label[i], table_1_long$value[i], digits = 0))
 
 # The chi-squared test printed beneath Table 1.
-# covers: table_1_chisq_statistic
 report_value("table_1_chisq_statistic", "Table 1, chi-squared statistic",
              chisq$statistic)
 
-# covers: table_1_chisq_p_value
 # The archive calls chisq.test(simulate.p.value = TRUE) and sets no seed, so the
 # published 0.002 is one draw from a distribution rather than a fixed quantity. The
 # median of 500 replications is printed, with the full range as evidence.
@@ -228,7 +219,6 @@ evidence(paste0("simulated p runs ", signif(chisq$p_simulated_min, 2), " to ",
 
 # "The statistically significant v2 statistic indicates that the political experience
 # of winning candidates differs across partisan and nonpartisan elections."
-# covers: desc_chisq_significant
 report_text("desc_chisq_significant",
             "Table 1, is the chi-squared test significant at the 0.05 level",
             if_else(chisq$p_asymptotic < 0.05 & chisq$p_simulated_max < 0.05,
@@ -240,7 +230,6 @@ evidence(paste0("asymptotic p = ", signif(chisq$p_asymptotic, 3),
 # "In partisan elections, 30% of winning candidates have no previous political
 # experience whereas in nonpartisan elections, the share of inexperienced winning
 # candidates drops by 9 percentage points to 21%."
-# covers: obs_partisan_no_experience_pct obs_nonpartisan_no_experience_pct obs_experience_gap_pp
 inexperienced <- filter(table_1, experience == "No previous political experience")
 report_value("obs_partisan_no_experience_pct",
              "Partisan elections, winners with no previous political experience (%)",
@@ -255,7 +244,6 @@ report_value("obs_experience_gap_pp",
 # "The 9 percentage point difference might reflect the effect of nonpartisan ballots
 # on who gets elected, but it could just as easily reflect other differences between
 # cities that do and do not hold partisan elections."
-# covers: obs_experience_gap_pp_restated
 report_value("obs_experience_gap_pp_restated",
              "Partisan minus nonpartisan, inexperienced winners, restated (pp)",
              inexperienced$pct_partisan - inexperienced$pct_nonpartisan, digits = 0)
@@ -264,7 +252,6 @@ report_value("obs_experience_gap_pp_restated",
 # predictions." and, later, "While we do see that winners in nonpartisan elections
 # appear to have more political experience than winners in partisan elections, an
 # alternative analysis of the historical record paints a murkier picture."
-# covers: desc_nonpartisan_winners_more_experienced
 report_text("desc_nonpartisan_winners_more_experienced",
             "Do fewer nonpartisan winners lack political experience",
             if_else(inexperienced$pct_nonpartisan < inexperienced$pct_partisan,
@@ -276,7 +263,6 @@ evidence(paste0("nonpartisan ", inexperienced$pct_nonpartisan, " per cent agains
 
 # "In partisan elections, 63% of candidates are attorneys or business executives while
 # in nonpartisan elections the corresponding figure is 48%."
-# covers: obs_partisan_attorney_exec_pct obs_nonpartisan_attorney_exec_pct
 # The recovered observational file records no candidate career at all, so neither
 # share has a counterpart anywhere in the pipeline. The variables it does carry are
 # printed instead, which is what makes the absence checkable rather than asserted.
@@ -296,17 +282,14 @@ evidence(paste0(dataset$n_variables, " variables, ", length(career_variables),
 # levels of political experience (779 elections), we see that the candidate with more
 # experience wins about 62% of the time in partisan elections and 61% of the time in
 # nonpartisan elections. This difference is not statistically significant (p = 0.791)."
-# covers: obs_n_contested_elections
 report_value("obs_n_contested_elections",
              "Elections in which the two candidates' experience differs",
              advantage$n_elections_total, digits = 0)
 
-# covers: obs_partisan_more_experienced_wins_pct
 report_value("obs_partisan_more_experienced_wins_pct",
              "Partisan elections, more experienced candidate wins (%)",
              advantage$pct_partisan, digits = 0)
 
-# covers: obs_nonpartisan_more_experienced_wins_pct
 report_value("obs_nonpartisan_more_experienced_wins_pct",
              "Nonpartisan elections, more experienced candidate wins (%)",
              advantage$pct_nonpartisan, digits = 0)
@@ -314,7 +297,6 @@ evidence(paste0("at one decimal, partisan ", round(advantage$pct_partisan, 1),
                 " and nonpartisan ", round(advantage$pct_nonpartisan, 1),
                 "; the article assigns 62 to partisan and 61 to nonpartisan"))
 
-# covers: obs_experience_advantage_p_value
 report_value("obs_experience_advantage_p_value",
              "p-value on the partisan/nonpartisan difference (HC2 regression)",
              advantage$p_value_hc2, digits = 3)
@@ -322,7 +304,6 @@ evidence(paste0("chi-squared on the same 2x2 gives ",
                 round(advantage$p_value_chisq, 3),
                 "; the article reports 0.791"))
 
-# covers: desc_experience_advantage_not_significant
 report_text("desc_experience_advantage_not_significant",
             "Is the partisan/nonpartisan difference distinguishable from zero",
             if_else(advantage$p_value_hc2 >= 0.05, "no", "yes"))
@@ -334,7 +315,6 @@ evidence(paste0("difference of ", round(advantage$difference_pp, 1),
 # "In our studies, subjects judge five successive elections in which five (or six)
 # attributes of two competing candidates are displayed: their race, gender, political
 # experience, career experience, age, and in some cases, political party."
-# covers: design_elections_per_subject design_attributes_nonpartisan design_attributes_partisan design_candidates_per_election
 report_value("design_elections_per_subject", "Elections judged per subject (MTurk)",
              design_value("mTurk", "elections_per_subject"), digits = 0)
 report_value("design_attributes_nonpartisan",
@@ -355,7 +335,6 @@ evidence(paste0("the modal count; ",
 # transcribed and has no block.
 
 # "The possible levels of each attribute are displayed in Table 2."
-# covers: table_2_age_35 table_2_age_45 table_2_age_55 table_2_age_65
 walk(1:4, \(i) report_value(paste0("table_2_age_",
                                    design_value("mTurk", paste0("age_level_", i))),
                             paste0("Table 2, age attribute level ", i),
@@ -364,7 +343,6 @@ walk(1:4, \(i) report_value(paste0("table_2_age_",
 # "The demographic profile of the MTurk sample is quite different from that of the
 # YouGov sample. On average, the MTurk sample is whiter, more male, more liberal, more
 # Democratic, better educated, and younger."
-# covers: desc_mturk_sample_differences
 mturk_democrat <- one(table_a1, "proportion", sample == "mTurk", party_id == "Democrat")
 yougov_democrat <- one(table_a1, "proportion", sample == "YouGov", party_id == "Democrat")
 report_text("desc_mturk_sample_differences",
@@ -379,7 +357,6 @@ evidence(paste0("Democrat share ", mturk_democrat, " on MTurk against ", yougov_
 
 # "A second dependent variable, candidate competence, is asked 'On a scale from 0 to
 # 100, how competent do you think these candidates would be as mayor?'"
-# covers: analysis_competence_scale_min analysis_competence_scale_max
 report_value("analysis_competence_scale_min", "Competence scale minimum (MTurk)",
              design_value("mTurk", "competence_scale_min"), digits = 0)
 report_value("analysis_competence_scale_max", "Competence scale maximum (MTurk)",
@@ -388,7 +365,6 @@ report_value("analysis_competence_scale_max", "Competence scale maximum (MTurk)"
 # "For this reason, we will present our results graphically using coefficient plots,
 # in which attribute levels are placed on the vertical axis and point estimates with
 # 95% confidence intervals are placed on the horizontal axis."
-# covers: analysis_ci_level
 report_value("analysis_ci_level", "Confidence interval level implied by the figures (%)",
              100 * (2 * pnorm(interval_multiplier(figure_3)) - 1))
 evidence(paste0("every interval in Figure 3 is the estimate plus or minus ",
@@ -399,7 +375,6 @@ evidence(paste0("every interval in Figure 3 is the estimate plus or minus ",
 # As it happens, the estimated marginal effects from a logit model correspond almost
 # exactly to the OLS estimates and none of our substantive interpretations depend on
 # this choice."
-# covers: analysis_amce_decimal_agreement analysis_logit_agreement
 # Neither comparison exists in the deposit. Its scripts fit no AMCE estimator and no
 # binary choice model, so the footnote reports two calculations that were never
 # archived and that nothing here can reproduce.
@@ -415,7 +390,6 @@ report_text("analysis_logit_agreement",
 # "Figure 3 presents the results of the MTurk study. In the first column, the estimates
 # of Equation 1 are shown. The strongest effects are observed for the political
 # experience attribute."
-# covers: desc_strongest_effects_pol_experience
 np_3 <- estimates(figure_3, panel == "Nonpartisan")
 pol_3 <- filter(np_3, coef_group == "Pol. Experience")
 other_3 <- filter(np_3, coef_group != "Pol. Experience")
@@ -431,7 +405,6 @@ evidence(paste0("political experience runs ",
 # "Relative to a candidate with no political experience, respondents prefer candidates
 # who are City Council Members, State Legislators, Mayors, or Representatives in
 # Congress by a margin of 25-30 percentage points."
-# covers: results_pol_exp_range_low results_pol_exp_range_high
 report_value("results_pol_exp_range_low",
              "Figure 3, smallest political experience effect, nonpartisan (pp)",
              100 * min(pol_3$estimate))
@@ -442,7 +415,6 @@ evidence(estimate_list(pol_3, digits = 1, scale = 100))
 
 # "Candidates who previously held a mayoral office were rewarded most for their
 # political experience."
-# covers: desc_mayor_rewarded_most
 report_text("desc_mayor_rewarded_most",
             "Is Mayor the largest political experience effect (MTurk, nonpartisan)",
             if_else(pol_3$label[which.max(pol_3$estimate)] == "Mayor", "yes", "no"))
@@ -451,13 +423,11 @@ evidence(estimate_list(arrange(pol_3, desc(estimate)), digits = 1, scale = 100))
 # "By contrast, we observe relatively muted effects for the job experience, race, age,
 # and gender attributes, although our respondents do express a mild preference for
 # candidates who are female and nonwhite."
-# covers: desc_muted_job_race_age_gender
 report_value("desc_muted_job_race_age_gender",
              "Figure 3, largest effect outside political experience, nonpartisan (pp)",
              100 * max(abs(other_3$estimate)))
 evidence(estimate_list(arrange(other_3, desc(abs(estimate))), digits = 1, scale = 100))
 
-# covers: desc_prefer_female_and_nonwhite
 male_3 <- one(np_3, "estimate", label == "Male")
 race_3 <- filter(np_3, coef_group == "Race")
 report_text("desc_prefer_female_and_nonwhite",
@@ -469,7 +439,6 @@ evidence(paste0("Male = ", formatC(100 * male_3, digits = 1, format = "f"), " pp
 
 # "Our respondents' preferences for candidates varied non-monotonically with age:
 # 45-year-olds are preferred to 35-year-olds and 55- and 65-year olds."
-# covers: desc_age_nonmonotonic
 age_3 <- filter(np_3, coef_group == "Age")
 report_text("desc_age_nonmonotonic",
             "Is the 45-year-old effect the largest of the age levels (MTurk, nonpartisan)",
@@ -480,7 +449,6 @@ evidence(paste0(estimate_list(age_3, digits = 1, scale = 100),
 
 # "In partisan elections, we observe a similar pattern, though the effects for the
 # political experience variables are more muted."
-# covers: desc_partisan_pol_exp_more_muted
 pol_3_partisan <- estimates(figure_3, panel == "Partisan", coef_group == "Pol. Experience")
 report_text("desc_partisan_pol_exp_more_muted",
             "Is every political experience effect smaller in the partisan panel (MTurk)",
@@ -493,7 +461,6 @@ evidence(paste0("partisan ", estimate_list(pol_3_partisan, digits = 1, scale = 1
 # "On average, our sample prefers independents to partisan candidates of either
 # stripe, though this average masks some heterogeneity by respondent party
 # identification, as we will explore in the next section."
-# covers: desc_prefers_independents
 party_3 <- estimates(figure_3, panel == "Partisan", coef_group == "Party")
 report_text("desc_prefers_independents",
             "Are both partisan candidate effects negative against an independent (MTurk)",
@@ -504,7 +471,6 @@ evidence(paste0(estimate_list(party_3, digits = 1, scale = 100),
 # "The final column of Fig. 3 shows the difference between partisan and nonpartisan
 # elections across the attributes they have in common. For job experience, race, age,
 # and gender, the presence or absence of party labels makes no difference."
-# covers: desc_difference_null_job_race_age_gender
 diff_3 <- estimates(figure_3, panel == "Difference")
 diff_3_other <- filter(diff_3, coef_group != "Pol. Experience")
 report_value("desc_difference_null_job_race_age_gender",
@@ -517,7 +483,6 @@ evidence(paste0(nrow(diff_3_other), " levels across job experience, race, age an
 # the political experience variables, depending on election type. In nonpartisan
 # elections, the effects of candidates' political experience are approximately 10
 # percentage points larger than in partisan elections."
-# covers: desc_difference_significant_pol_experience
 diff_3_pol <- filter(diff_3, coef_group == "Pol. Experience")
 report_value("desc_difference_significant_pol_experience",
              "Figure 3, political experience difference intervals excluding zero",
@@ -525,7 +490,6 @@ report_value("desc_difference_significant_pol_experience",
 evidence(paste0(nrow(diff_3_pol), " political experience levels; ",
                 estimate_list(diff_3_pol, digits = 1, scale = 100), " pp"))
 
-# covers: results_pol_exp_gap_pp
 report_value("results_pol_exp_gap_pp",
              "Figure 3, mean political experience difference (pp)",
              100 * mean(diff_3_pol$estimate))
@@ -538,7 +502,6 @@ evidence(paste0("the four differences run ",
 # "Figure 4 presents the identical analyses using the YouGov data. Overall, we observe
 # a very similar pattern of results. In nonpartisan elections, political experience is
 # heavily rewarded."
-# covers: desc_yougov_similar_pattern
 np_4 <- estimates(figure_4, panel == "Nonpartisan")
 pol_4 <- filter(np_4, coef_group == "Pol. Experience")
 other_4 <- filter(np_4, coef_group != "Pol. Experience")
@@ -553,7 +516,6 @@ evidence(paste0("political experience ", estimate_list(pol_4, digits = 1, scale 
 # that respondents prefer any experience to 'No Political Experience.' Indeed,
 # respondents do prefer school board presidents to political neophytes, but higher
 # offices are nevertheless preferred to school board presidents as well."
-# covers: desc_school_board_ordering
 school_board_4 <- one(pol_4, "estimate", label == "School Board President")
 higher_4 <- filter(pol_4, label != "School Board President")
 report_text("desc_school_board_ordering",
@@ -567,7 +529,6 @@ evidence(paste0("School Board President = ",
 # "In the YouGov sample, we observe a similar interaction between election type and
 # the effects of political experience. Political experience matters more in
 # nonpartisan elections."
-# covers: desc_yougov_pol_exp_interaction
 diff_4_pol <- estimates(figure_4, panel == "Difference", coef_group == "Pol. Experience")
 report_value("desc_yougov_pol_exp_interaction",
              "Figure 4, political experience differences that are positive",
@@ -579,7 +540,6 @@ evidence(paste0(nrow(diff_4_pol), " levels; ",
 # "We added the 'Stay-at-Home Dad/Mom' and 'Electrician' levels to the job experience
 # attribute. Both of these careers were viewed negatively in both partisan and
 # nonpartisan elections."
-# covers: desc_stayathome_electrician_negative
 added_labels <- c("Stay-at-Home Dad/Mom", "Electrician")
 added_4 <- estimates(figure_4, panel %in% c("Nonpartisan", "Partisan"),
                      label %in% added_labels)
@@ -591,7 +551,6 @@ evidence(estimate_list(added_4, digits = 1, scale = 100,
 
 # "We observe similarly small effects of gender and age in the YouGov sample as we did
 # in the MTurk sample."
-# covers: desc_yougov_small_gender_age
 gender_age_4 <- filter(np_4, coef_group %in% c("Gender", "Age"))
 gender_age_3 <- filter(np_3, coef_group %in% c("Gender", "Age"))
 report_value("desc_yougov_small_gender_age",
@@ -605,7 +564,6 @@ evidence(paste0("YouGov ", estimate_list(gender_age_4, digits = 1, scale = 100),
 # "As shown in the top center panel of each figure, Democrats dislike Republican
 # candidates and Republicans dislike Democratic candidates. The differences in these
 # preferences are large and statistically significant."
-# covers: desc_partisans_dislike_outparty_candidates
 outparty <- bind_rows(
   estimates(figure_5, panel == "Partisan", party == "Democrats", label == "Republican") |>
     mutate(sample = "MTurk"),
@@ -625,7 +583,6 @@ evidence(estimate_list(outparty, digits = 1, scale = 100,
 
 # "Intriguingly, in both the MTurk and YouGov samples, partisans dislike the out-party
 # (relative to an independent candidate) more than they like the in-party."
-# covers: desc_dislike_outparty_more_than_like_inparty
 inparty <- bind_rows(
   estimates(figure_5, panel == "Partisan", party == "Democrats", label == "Democrat") |>
     mutate(sample = "MTurk"),
@@ -649,7 +606,6 @@ evidence(paste0("out-party ", estimate_list(outparty, digits = 1, scale = 100,
 # patterns with respect to candidate gender and race emerge. Republican respondents
 # marginally prefer white candidates while Democrats marginally prefer nonwhite
 # candidates."
-# covers: desc_race_preference_by_respondent_party
 race_56 <- bind_rows(
   estimates(figure_5, panel == "Nonpartisan", coef_group == "Race") |> mutate(sample = "MTurk"),
   estimates(figure_6, panel == "Nonpartisan", coef_group == "Race") |> mutate(sample = "YouGov")
@@ -665,7 +621,6 @@ evidence(estimate_list(race_56, digits = 1, scale = 100,
 # percentage points more likely to choose a female candidate than a male candidate."
 # The sentence names no sample, and the paragraph covers Figures 5 and 6, so all four
 # estimates are printed rather than one being chosen for it.
-# covers: desc_republicans_no_gender_preference
 male_rep <- bind_rows(
   estimates(figure_5, coef_group == "Gender", party == "Republicans",
             panel %in% c("Nonpartisan", "Partisan")) |> mutate(sample = "MTurk"),
@@ -678,7 +633,6 @@ report_value("desc_republicans_no_gender_preference",
 evidence(estimate_list(male_rep, digits = 1, scale = 100,
                        name = paste0(male_rep$sample, " ", male_rep$panel)))
 
-# covers: results_democrats_female_preference_pp
 male_dem <- bind_rows(
   estimates(figure_5, coef_group == "Gender", party == "Democrats",
             panel %in% c("Nonpartisan", "Partisan")) |> mutate(sample = "MTurk"),
@@ -693,7 +647,6 @@ evidence(estimate_list(male_dem, digits = 1, scale = -100,
                        name = paste0(male_dem$sample, " ", male_dem$panel)))
 
 # "These race and gender patterns do not differ much by election type."
-# covers: desc_race_gender_patterns_stable_across_election_type
 race_gender_diff_5 <- estimates(figure_5, panel == "Difference",
                                 coef_group %in% c("Race", "Gender"))
 report_value("desc_race_gender_patterns_stable_across_election_type",
@@ -706,7 +659,6 @@ evidence(paste0(nrow(race_gender_diff_5), " estimates; ",
 
 # "Turning next to political experience, Republicans and Democrats both reward more
 # highly-experienced candidates in both partisan and nonpartisan elections."
-# covers: desc_both_parties_reward_experience
 pol_56 <- bind_rows(
   estimates(figure_5, coef_group == "Pol. Experience",
             panel %in% c("Nonpartisan", "Partisan")) |> mutate(sample = "MTurk"),
@@ -724,7 +676,6 @@ evidence(paste0(nrow(pol_56), " estimates across two samples, two respondent par
 # more in nonpartisan elections than in partisan elections - is only borne out among
 # Democratic respondents, not Republican respondents. This pattern is clearest in the
 # MTurk sample, though it does obtain in the YouGov sample as well."
-# covers: desc_prediction_only_among_democrats
 pol_diff_5 <- estimates(figure_5, panel == "Difference", coef_group == "Pol. Experience")
 pol_diff_6 <- estimates(figure_6, panel == "Difference", coef_group == "Pol. Experience")
 report_text("desc_prediction_only_among_democrats",
@@ -735,7 +686,6 @@ report_text("desc_prediction_only_among_democrats",
 evidence(estimate_list(pol_diff_5, digits = 1, scale = 100,
                        name = paste0(pol_diff_5$party, " ", pol_diff_5$label)))
 
-# covers: desc_clearest_in_mturk
 report_text("desc_clearest_in_mturk",
             "Is the Democrat minus Republican gap in the political experience difference larger on MTurk",
             if_else(mean(pol_diff_5$estimate[pol_diff_5$party == "Democrats"]) -
@@ -757,7 +707,6 @@ evidence(paste0("MTurk Democrats ",
 # different markers of competence. In the YouGov sample, Republican respondents give
 # greater weight to occupational experience in nonpartisan elections, while Democratic
 # respondents give greater weight to political experience."
-# covers: desc_yougov_republicans_occupation_democrats_political
 job_diff_6 <- estimates(figure_6, panel == "Difference", coef_group == "Job Experience")
 report_text("desc_yougov_republicans_occupation_democrats_political",
             "Do the YouGov job experience differences run larger for Republicans and the political experience differences larger for Democrats",
@@ -778,7 +727,6 @@ evidence(paste0("job experience ",
 # "In order to assess the possiblity that the nonpartisan treatment operates by
 # changing peceptions of candidate competence, we asked respondents to rate the
 # competence of both candidates on a scale ranging from 0 to 100."
-# covers: mechanism_competence_scale_min mechanism_competence_scale_max
 report_value("mechanism_competence_scale_min", "Competence scale minimum (YouGov)",
              design_value("YouGov", "competence_scale_min"), digits = 0)
 report_value("mechanism_competence_scale_max", "Competence scale maximum (YouGov)",
@@ -787,7 +735,6 @@ report_value("mechanism_competence_scale_max", "Competence scale maximum (YouGov
 # "Because subjects evaluate candidates on five attributes in the nonpartisan
 # elections and on six attributes in the partisan elections, they may mechanically
 # assign more weight to remaining traits when party is omitted."
-# covers: mechanism_attributes_nonpartisan mechanism_attributes_partisan
 report_value("mechanism_attributes_nonpartisan",
              "Attributes displayed in a nonpartisan election (YouGov)",
              design_value("YouGov", "attributes_nonpartisan"), digits = 0)
@@ -797,7 +744,6 @@ report_value("mechanism_attributes_partisan",
 
 # "Most importantly, both Republicans and Democrats rate candidates as more competent
 # when they have more political experience."
-# covers: desc_both_parties_competence_experience
 pol_78 <- bind_rows(
   estimates(figure_7, coef_group == "Pol. Experience",
             panel %in% c("Nonpartisan", "Partisan")) |> mutate(sample = "MTurk"),
@@ -815,7 +761,6 @@ evidence(paste0(nrow(pol_78), " estimates; they run ",
 # "As shown in the difference column, Democratic respondents (but not Republican
 # respondents) rate such candidates as even more competent in the absence of party
 # labels."
-# covers: desc_democrats_competence_gap_nonpartisan
 pol_diff_7 <- estimates(figure_7, panel == "Difference", coef_group == "Pol. Experience")
 report_text("desc_democrats_competence_gap_nonpartisan",
             "Do the competence differences clear zero for Democrats but not Republicans (MTurk)",
@@ -836,7 +781,6 @@ evidence(paste0(sum(excludes_zero(filter(pol_diff_7, party == "Democrats"))), " 
 # across both datasets, Republican respondents appear to rate white candidates as
 # marginally more competent than nonwhite candidates, while the opposite pattern holds
 # for Democratic respondents."
-# covers: desc_small_race_gender_age_competence
 demog_78 <- bind_rows(
   estimates(figure_7, coef_group %in% c("Race", "Gender", "Age"),
             panel %in% c("Nonpartisan", "Partisan")) |> mutate(sample = "MTurk"),
@@ -851,7 +795,6 @@ evidence(paste0(nrow(demog_78), " estimates, mean magnitude ",
                 " points against political experience estimates running to ",
                 formatC(max(pol_78$estimate), digits = 1, format = "f")))
 
-# covers: desc_republicans_white_more_competent
 race_78 <- filter(demog_78, coef_group == "Race")
 report_text("desc_republicans_white_more_competent",
             "Are the mean nonwhite competence effects negative for Republicans and positive for Democrats in both samples",
@@ -880,7 +823,6 @@ evidence(paste0("mean nonwhite effect, MTurk Democrats ",
 # respondents rating police officers, small business owners, and business executives
 # more highly than educators, while Democrats hold the opposite views on such
 # candidates."
-# covers: desc_occupation_competence_by_party
 trio <- c("Police Officer", "Small Business Owner", "Business Executive")
 trio_78 <- bind_rows(
   estimates(figure_7, label %in% trio, panel == "Nonpartisan") |> mutate(sample = "MTurk"),
@@ -895,7 +837,6 @@ evidence(estimate_list(trio_78, digits = 2,
 
 # "Neither party's respondents rated stay-at-home parents as more competent than
 # educators."
-# covers: desc_stayathome_not_more_competent
 stayathome_8 <- estimates(figure_8, label == "Stay-at-Home Dad/Mom",
                           panel %in% c("Nonpartisan", "Partisan"))
 report_text("desc_stayathome_not_more_competent",
@@ -907,7 +848,6 @@ evidence(paste0(estimate_list(stayathome_8, digits = 2,
 
 # "The same candidate types that respondents view as more competent are the ones that
 # they tend to elect at higher rates in nonpartisan elections."
-# covers: desc_competent_types_elected_nonpartisan
 competence_np <- estimates(figure_c3, panel == "Nonpartisan")
 paired_np <- inner_join(select(np_3, label, choice = estimate),
                         select(competence_np, label, competence = estimate),
@@ -925,7 +865,6 @@ evidence(paste0(nrow(paired_np), " attribute levels; the political experience le
 # elections. For example, both Democrats and Republicans view small business owners
 # and business executives as more likely to implement conservative policies, and there
 # is some suggestive evidence that this effect is stronger in nonpartisan elections."
-# covers: desc_policy_index_business_conservative
 # No Appendix C.2 exists and this analysis appears nowhere in the published appendix.
 # The direction of the policy index is documented nowhere either, so the candidate's
 # own party label is the anchor: a Republican candidate raises the index and a
@@ -948,7 +887,6 @@ evidence(paste0("polarity anchor, ",
 
 # "Indeed, Democrats prefer experienced candidates in nonpartisan elections, but they
 # do not see these candidates as more likely to implement liberal policies."
-# covers: desc_policy_index_democrats_experience
 policy_pol_dem <- estimates(policy, panel == "Nonpartisan", party == "Democrats",
                             coef_group == "Pol. Experience")
 report_value("desc_policy_index_democrats_experience",
@@ -963,7 +901,6 @@ evidence(paste0(nrow(policy_pol_dem), " estimates across the two samples, ",
 # "Appendix C.3 reports the results of this analysis. At least in the Mechanical Turk
 # sample, we find that subjects give greater weight to political experience in
 # same-party elections compared with cross-party elections."
-# covers: desc_satisficing_mturk_same_party
 satisficing_b1 <- estimates(figure_b1, panel == "Difference",
                             coef_group == "Pol. Experience")
 report_value("desc_satisficing_mturk_same_party",
@@ -977,7 +914,6 @@ evidence(paste0(nrow(satisficing_b1), " levels; ",
 
 # "The effect of previous political experience was shown to be statistically
 # significantly larger in nonpartisan elections."
-# covers: desc_pol_exp_effect_larger_nonpartisan
 pol_diff_34 <- bind_rows(mutate(diff_3_pol, sample = "MTurk"),
                          mutate(diff_4_pol, sample = "YouGov"))
 report_value("desc_pol_exp_effect_larger_nonpartisan",
@@ -989,7 +925,6 @@ evidence(paste0(nrow(pol_diff_34), " levels across the two samples; ",
 
 # "In the appendix, we explore the correspondence across samples more deeply, finding
 # that the correlation of effect estimates is very strong at 0.95."
-# covers: discussion_correlation
 report_value("discussion_correlation",
              "Correlation of the MTurk and YouGov effect estimates",
              one(correlation, "correlation", method == "pearson",
@@ -1006,7 +941,6 @@ evidence(paste0("over ",
 
 # "Candidate Choice without Party Labels: New Insights from U.S. Mayoral Elections
 # 1945-2007 and Conjoint Survey Experiments"
-# covers: appendix_title_year_first appendix_title_year_last
 report_value("appendix_title_year_first", "Appendix title, first election year",
              dataset$year_first, digits = 0)
 report_value("appendix_title_year_last", "Appendix title, last election year",
@@ -1021,9 +955,6 @@ report_value("appendix_title_year_last", "Appendix title, last election year",
 
 # The respondent party identification panel and the two sample sizes in the table's
 # note, as this pipeline rebuilds them.
-# covers: table_a1_party_mturk_democrat table_a1_party_mturk_independent table_a1_party_mturk_republican
-# covers: table_a1_party_yougov_democrat table_a1_party_yougov_independent table_a1_party_yougov_republican
-# covers: table_a1_n_mturk table_a1_n_yougov
 table_a1_party_rows <- table_a1 |>
   mutate(claim_id = paste0("table_a1_party_", str_to_lower(sample), "_",
                            str_to_lower(party_id)),
@@ -1044,8 +975,6 @@ report_value("table_a1_n_yougov", "Table A.1, YouGov respondents",
 # Neither deposited data file carries a respondent variable beyond party
 # identification, so none of those cells has a counterpart anywhere in the pipeline.
 # Each is listed so the gap is enumerated rather than described.
-# covers: table_a1_race_* table_a1_gender_* table_a1_ideology_* table_a1_education_*
-# covers: table_a1_age_mturk_* table_a1_age_yougov_*
 uncovered_a1 <- published_claims |>
   filter(location == "Table A.1", claim_type == "pipeline",
          !str_detect(claim_id, "^table_a1_(party|n)_"))
@@ -1066,7 +995,6 @@ evidence(paste0(nrow(uncovered_a1), " of the table's ",
 
 # "In our application, subjects evaluate candidates on five attributes in the
 # nonpartisan elections and on six attributes in the partisan elections."
-# covers: appendix_b_attributes_nonpartisan appendix_b_attributes_partisan
 report_value("appendix_b_attributes_nonpartisan",
              "Appendix B, attributes displayed in a nonpartisan election (MTurk)",
              design_value("mTurk", "attributes_nonpartisan"), digits = 0)
@@ -1077,7 +1005,6 @@ report_value("appendix_b_attributes_partisan",
 # "On MTurk, we observe a statistically significant interaction: the effects for the
 # political experience attribute are stronger when candidates are from the same
 # party."
-# covers: desc_appendix_b_mturk_significant_interaction
 report_value("desc_appendix_b_mturk_significant_interaction",
              "Figure B.1, political experience interactions excluding zero",
              sum(excludes_zero(satisficing_b1)), digits = 0)
@@ -1086,7 +1013,6 @@ evidence(paste0(nrow(satisficing_b1), " levels; ",
 
 # "On YouGov, the effect of political experience does not vary across the two types of
 # elections."
-# covers: desc_appendix_b_yougov_no_variation
 satisficing_b2 <- estimates(figure_b2, panel == "Difference",
                             coef_group == "Pol. Experience")
 report_value("desc_appendix_b_yougov_no_variation",
@@ -1100,7 +1026,6 @@ evidence(paste0(nrow(satisficing_b2), " levels; ",
 # "In addition to candidate preference, we also asked respondents to rate the
 # candidates in terms of their competence: 'On a scale from 0 to 100, how competent do
 # you think these candidates would be as mayor?'"
-# covers: appendix_c_competence_scale_min appendix_c_competence_scale_max
 report_value("appendix_c_competence_scale_min",
              "Appendix C, competence scale minimum (MTurk)",
              design_value("mTurk", "competence_scale_min"), digits = 0)
@@ -1111,7 +1036,6 @@ report_value("appendix_c_competence_scale_max",
 # "In this section, we reproduce Figures 1 and 2 from the main text using this
 # alternative dependent variable. The results are very similar, but we present them
 # here for completeness."
-# covers: desc_appendix_c_results_similar
 choice_c4 <- estimates(figure_4, panel == "Nonpartisan") |> select(label, choice = estimate)
 competence_c4 <- estimates(figure_c4, panel == "Nonpartisan") |>
   select(label, competence = estimate)

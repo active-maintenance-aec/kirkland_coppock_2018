@@ -209,11 +209,10 @@ does not record at all, 6 are descriptions whose wording sets no
 threshold to test against, and one is a sentence that names neither a
 sample nor an election type.
 
-**The article contradicts its own data on 8 claims.** Six of them are
-misstated numbers in sentences, gathered into the 4 entries of
-`kirkland_coppock_2018_errata.pdf`. The other two are descriptions of
-the heterogeneous-effects figures that the estimates behind those
-figures do not support, and they are discussed under Errata below.
+**The article contradicts its own data on 8 claims.** Six are misstated
+numbers and two are descriptions of the heterogeneous-effects figures
+that the estimates behind those figures do not support. All eight are
+set out as the 6 entries of `kirkland_coppock_2018_errata.pdf`.
 
 **The p-value that does not reproduce.** The paper reports that among
 the 779 elections in which the two candidates had different levels of
@@ -317,27 +316,30 @@ alongside a later draft of the paper.
 
 The rewrite corrects no analytical error in the deposited code, because
 none of the discrepancies above is one. What the comparison does turn up
-is misstated numbers in the article itself.
+is 6 sentences in the article that its own data do not bear out. They
+are set out in `errata.qmd`, which renders to
+`kirkland_coppock_2018_errata.pdf` at the repository root, ordered by
+severity. Every corrected value in that note is computed at render time
+from `maintained/output/`, so it cannot go stale in the way the article
+did. None of the six changes a conclusion.
 
-**Four sentences carry a number the article’s own data do not support.**
-They are set out in `errata.qmd`, which renders to
-`kirkland_coppock_2018_errata.pdf` at the repository root: the
-transposition of the two ballot types in the experience-advantage
-comparison, the p-value of 0.791 that reproduces under no test, the
-count of municipalities in the mayoral dataset, and the range of
-political experience effects in the sentence describing Figure 3. Every
-corrected value in that note is computed at render time from
-`maintained/output/`, so it cannot go stale in the way the article did.
-None of the four changes a conclusion.
+**Four are misstated numbers.** The two ballot types are transposed in
+the experience-advantage comparison, so the sentence reports the gap
+running against the paper’s own argument. The p-value of 0.791 on that
+comparison reproduces under no test. The mayoral dataset covers 237
+municipalities rather than 225. And the range of political experience
+effects in the sentence describing Figure 3 is wrong at both ends.
 
-**Two descriptions of the figures do not hold.** These are not misstated
-numbers and are not in the errata note, since the correction is a
-rewording rather than a value.
+**Two are descriptions the estimates do not support.** A description a
+reader would quote misleads exactly as a number does, so these are
+entries in the note rather than observations about it; the corrected
+sentence says what the estimates support and the reason line carries the
+evidence.
 
 - “Republican respondents marginally prefer white candidates while
   Democrats marginally prefer nonwhite candidates” holds in the YouGov
   sample, where all three Republican nonwhite estimates are negative. It
-  does not hold on MTurk, where Republican respondents prefer Asian
+  reverses on MTurk, where Republican respondents prefer Asian
   candidates to white candidates by 6.1 percentage points while
   preferring white candidates to Black and Hispanic ones.
 - “Democratic respondents (but not Republican respondents) rate such
@@ -345,6 +347,13 @@ rewording rather than a value.
   reads the difference column of Figure 7 as null for Republicans. Two
   of the four Democratic intervals exclude zero, and so does one of the
   four Republican ones, for candidates who have been mayor.
+
+**One claim the article’s data cannot judge either way is deliberately
+not in the note.** “Democrats are 10 percentage points more likely to
+choose a female candidate than a male candidate” names neither a sample
+nor an election type, and the four estimates it could be reporting run
+3.4 to 11.1 percentage points. That is unjudgeable rather than wrong,
+and the ground truth records it as `unresolved`.
 
 ------------------------------------------------------------------------
 
@@ -410,16 +419,24 @@ do not. `ground_truth/build_ground_truth.R` rebuilds this table from
 into that script are the published values themselves, which serve as
 comparison targets and are never inputs to a computation.
 
-**The archive columns are empty, and that is a property of the
-deposit.** `value_script` and `match` are `NA` on every row. The
-deposited scripts write no files at all, keeping every result as an
-in-memory R object, as the archive’s own README explains; nothing in
-this repository re-derives those objects, so there is no archive number
-to read back. The comparison that can be made is between the article and
-the maintained rewrite, which is what `value_rewrite` and
-`match_rewrite` record. The one place the archive’s own output has been
-compared directly is the 729 figure estimates described under Figure
-Verification.
+**The archive columns are empty, and this repository is missing the
+script that would fill them.** `value_script` and `match` are `NA` on
+every row. The deposited scripts write no files at all, keeping every
+result as an in-memory R object, as the archive’s own README explains,
+so recovering an archive number means running the deposited code in a
+scratch copy and harvesting the objects it leaves behind. That is the
+job of a `ground_truth/extract_archive_values.R`, and **this repository
+does not have one yet**. Until it does, the comparison recorded here is
+between the article and the maintained rewrite, which is what
+`value_rewrite` and `match_rewrite` carry. The one place the archive’s
+own output has been compared directly is the 729 figure estimates
+described under Figure Verification, and that comparison lives in no
+committed script either.
+
+Filling `value_script` from `value_rewrite` would make the column look
+populated while recording the rewrite’s own numbers as the archive’s,
+which is worse than leaving it empty. It is left empty, and the gap is
+stated here rather than implied.
 
 ------------------------------------------------------------------------
 
@@ -568,14 +585,16 @@ small” and “do not differ much” set no threshold, so those blocks print
 the distribution and no verdict, because a verdict would invent the
 threshold the sentence withholds.
 
-Coverage is a gate rather than a convention. `build_ground_truth.R` runs
-the claims file non-interactively, reads the claim ids back off the
-lines it actually printed, and halts unless every pipeline and
-descriptive row of `published_claims.csv` appears among them, unless
-every id printed is one the article makes, and unless the ids declared
-in the blocks and the ids printed at run time are the same set. Matching
-the declarations as text would pass a block that errors or prints
-nothing.
+Coverage is a gate rather than a convention. Each claim prints one line
+of the form `CLAIM <id> = <value> || <label>`, and that printed line is
+the only link between a block and the extraction. `build_ground_truth.R`
+runs the claims file non-interactively, reads the ids back off the lines
+it actually printed, and halts unless every pipeline and descriptive row
+of `published_claims.csv` appears among them, unless every id printed is
+one the article makes, and unless each has a ground truth row. Nothing
+in the gate parses a comment: a comment naming the claims a block covers
+would prove only that someone wrote the comment, and it can go stale on
+its own while the code beside it changes.
 
 ------------------------------------------------------------------------
 

@@ -29,8 +29,13 @@ here::i_am("ground_truth/build_ground_truth.R")
 
 out <- function(f) read_csv(here::here("maintained", "output", f), show_col_types = FALSE)
 
+# value_paper holds the string the article prints, so the column is read as text. Left
+# to guess, readr would turn a column of numeric-looking entries into doubles and drop
+# exactly the printed precision the comparison below depends on: 0.150 would come back
+# as 0.15 and 1,204 as 1204, and the agreement test counts decimals.
 published_claims <- read_csv(here::here("ground_truth", "published_claims.csv"),
-                             show_col_types = FALSE)
+                             col_types = cols(value_paper = col_character(),
+                                              .default = col_guess()))
 
 table_1 <- out("table_1_observational_experience.csv")
 table_a1 <- out("table_a1_party_identification.csv")
@@ -702,47 +707,28 @@ write_csv(gt, here::here("ground_truth", "kirkland_coppock_2018_ground_truth.csv
 # instruments. Every pipeline and descriptive claim must carry a row here and a block
 # in maintained/in_text_claims.R.
 #
-# Matching "# covers:" markers would prove only that a block was written. A block that
-# errors, or that prints nothing, satisfies a textual check completely. So the file is
-# run non-interactively, its stdout is captured, and the claim ids are read back off
-# the CLAIM lines it actually printed. The count of those lines against the count of
-# declarations is the check.
-claims_file <- read_lines(here::here("maintained", "in_text_claims.R"))
-
-declared_ids <- claims_file |>
-  str_subset("^#\\s*covers:") |>
-  str_remove("^#\\s*covers:") |>
-  str_squish() |>
-  str_split(" ") |>
-  list_c()
-
-expand_marker <- function(marker) {
-  if (!str_detect(marker, "\\*$")) return(marker)
-  prefix <- str_remove(marker, "\\*$")
-  matched <- published_claims$claim_id[str_starts(published_claims$claim_id, fixed(prefix))]
-  stopifnot(length(matched) > 0)
-  matched
-}
-
-declared_ids <- unique(list_c(map(declared_ids, expand_marker)))
-
+# The gate reads the program, not the text of it. A comment naming the claims a block
+# covers would prove only that someone wrote the comment: a block that errors, or that
+# prints nothing, satisfies a textual check completely, and the comment can go stale on
+# its own while the code beside it changes. So the claims file is run non-interactively,
+# its stdout is captured, and the ids are read back off the CLAIM lines it actually
+# printed. Nothing here parses a comment.
 claims_output <- system2("Rscript", here::here("maintained", "in_text_claims.R"),
                          stdout = TRUE, stderr = FALSE)
 
 printed_ids <- claims_output |>
   str_subset("^CLAIM ") |>
-  str_remove("^CLAIM ") |>
-  str_remove(" \\|.*$") |>
-  str_squish()
+  str_match("^CLAIM ([^ ]+) = ") |>
+  (\(m) m[, 2])()
+
+stopifnot(!any(is.na(printed_ids)))
 
 must_be_covered <- published_claims$claim_id[published_claims$claim_type %in%
                                                c("pipeline", "descriptive")]
 
 missing_blocks <- setdiff(must_be_covered, printed_ids)
 unknown_ids <- setdiff(printed_ids, published_claims$claim_id)
-declared_not_printed <- setdiff(declared_ids, printed_ids)
-printed_not_declared <- setdiff(printed_ids, declared_ids)
-missing_gt_rows <- setdiff(must_be_covered, gt$claim_id)
+missing_gt_rows <- setdiff(printed_ids, gt$claim_id)
 
 if (length(missing_blocks) > 0) {
   stop("published claims with no block in maintained/in_text_claims.R: ",
@@ -752,21 +738,18 @@ if (length(unknown_ids) > 0) {
   stop("maintained/in_text_claims.R prints claim ids the article does not make: ",
        paste(unknown_ids, collapse = ", "))
 }
-if (length(declared_not_printed) > 0) {
-  stop("blocks declare a claim they do not print: ",
-       paste(declared_not_printed, collapse = ", "))
-}
-if (length(printed_not_declared) > 0) {
-  stop("blocks print a claim they do not declare: ",
-       paste(printed_not_declared, collapse = ", "))
-}
 if (length(missing_gt_rows) > 0) {
-  stop("published claims with no ground truth row: ",
+  stop("claims printed with no ground truth row: ",
        paste(missing_gt_rows, collapse = ", "))
 }
 stopifnot(length(printed_ids) == length(unique(printed_ids)),
-          length(printed_ids) == length(declared_ids),
+          length(printed_ids) == nrow(gt),
+          setequal(printed_ids, gt$claim_id),
           all(gt$claim_id %in% published_claims$claim_id))
+
+print(str_glue("Coverage: {length(printed_ids)} claims printed by ",
+               "maintained/in_text_claims.R, {nrow(gt)} ground truth rows, ",
+               "{length(must_be_covered)} pipeline and descriptive claims all covered."))
 
 print(gt |> select(claim_id, claim, value_rewrite, value_paper, match_rewrite, defect_locus),
       n = nrow(gt), width = 200)

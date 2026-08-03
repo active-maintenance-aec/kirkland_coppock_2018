@@ -11,6 +11,7 @@
 - [Ground Truth Verification](#ground-truth-verification)
 - [Maintained Rewrite](#maintained-rewrite)
 - [Figure Verification](#figure-verification)
+- [In-Text Claims](#in-text-claims)
 - [Maintained Rewrite Verification](#maintained-rewrite-verification)
 - [R Environment](#r-environment)
 
@@ -51,8 +52,13 @@ them.
 script per published table or figure, writing to `output/`, which is
 committed so a reader can compare a fresh run against it without
 downloading anything. `ground_truth/` ties every published number to the
-code that produces it. `original/` is created by the download script and
-is deliberately absent from the repository. This README is the
+code that produces it, starting from `published_claims.csv`, an
+extraction of every numeric token in the article and the online
+appendix. `maintained/in_text_claims.R` prints each of those numbers
+beside the sentence that states it. `original/` is created by the
+download script and is deliberately absent from the repository.
+`errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note
+listing the article’s misstated numbers. This README is the
 reproducibility report, also available as a PDF in `report/`.
 
 **License.** CC0 1.0 Universal, matching the terms of the deposit this
@@ -68,10 +74,12 @@ source("run_all.R")
 
 That fetches the deposited archive from Dataverse, verifies its 10
 checksums, produces every published table and figure into
-`maintained/output/`, and rebuilds the ground truth table from those
-outputs. It takes about a minute. Individual scripts can be run on their
-own in any order; only `ground_truth/build_ground_truth.R` depends on
-the others having run first.
+`maintained/output/`, rebuilds the ground truth table from those
+outputs, prints every published number beside the sentence that states
+it, and verifies the deposit again. It takes about a minute. Individual
+scripts can be run on their own in any order; only
+`ground_truth/build_ground_truth.R` and `maintained/in_text_claims.R`
+depend on the others having run first.
 
 Required packages: tidyverse, estimatr, knitr, kableExtra, here. Paths
 resolve through `here`, so nothing depends on the working directory and
@@ -94,7 +102,7 @@ voters fall back on other indicators of fitness for office, political
 experience above all.
 
 **Design**: Three pieces of evidence. An observational record of 1,010
-US mayoral elections held between 1945 and 2007 across 225
+US mayoral elections held between 1945 and 2007 across 237
 municipalities, comparing the political experience of winners under
 partisan and nonpartisan ballots. Then two conjoint survey experiments
 running the same design on different samples: an MTurk convenience
@@ -163,14 +171,17 @@ all 10 files unchanged.
 ### Does the maintained rewrite reproduce the paper?
 
 Yes for everything the paper prints, with exceptions in the
-observational paragraph on page 5 and in one sentence describing Figure
-3.
+observational paragraph on page 5, in one sentence describing Figure 3,
+and in two sentences describing patterns in the heterogeneous-effects
+figures.
 
 | Component | Verdict |
 |:---|:---|
 | Table 1 (24 cells plus both totals) | Reproduces exactly |
 | Table 1 chi-squared statistic | Reproduces (21.2) |
 | Table 1 chi-squared p-value | Reproduces; the archive’s test is an unseeded simulation and 0.002 is inside its range |
+| Text p. 5, 1,010 elections and the 1945 to 2007 span | Reproduce exactly |
+| Text p. 5, 225 municipalities | Does not reproduce (237 here) |
 | Text p. 5, 779 elections | Reproduces exactly |
 | Text p. 5, 62 and 61 per cent | Reproduce, but the two labels are transposed in the sentence |
 | Text p. 5, p = 0.791 | Does not reproduce (0.852 here) |
@@ -180,12 +191,29 @@ observational paragraph on page 5 and in one sentence describing Figure
 | Figures 3 to 8, B.1, B.2, C.3, C.4 | Reproduce; all 729 estimates and standard errors agree with the archive to 4e-13 |
 | Text on Figure 3, 25 to 30 percentage points | Range is tight at both ends; the estimates run 22.7 to 32.0 |
 | Text on Figure 3, about 10 percentage points | Reproduces (9.1 to 11.7) |
+| Figures 5 and 6, Republicans prefer white candidates | Holds on YouGov and not on MTurk, where Republicans prefer Asian candidates by 6.1 points |
+| Figure 7, Republicans show no competence gap by election type | Does not hold; the Republican estimate for Mayor excludes zero |
 | Discussion, correlation of 0.95 | Reproduces (0.9494) on the archive’s specification |
 
 Reproduction verdict by component
 
-Of the 50 recorded ground truth claims, 46 are verifiable and 41 of them
-match.
+Every numeric token in the article and the online appendix was extracted
+by hand into `ground_truth/published_claims.csv`, 178 of them, and each
+classified. 100 are quantities the pipeline should produce, 41 are
+claims about shape, sign or ordering that need a computed truth value,
+and the rest are scale endpoints, category labels, and numbers copied
+from other papers. The ground truth carries 164 rows, one for every
+claim either instrument can reach; 112 of them can be evaluated and 104
+come out right. Of the 52 that cannot, 45 are quantities the deposit
+does not record at all, 6 are descriptions whose wording sets no
+threshold to test against, and one is a sentence that names neither a
+sample nor an election type.
+
+**The article contradicts its own data on 8 claims.** Six of them are
+misstated numbers in sentences, gathered into the 4 entries of
+`kirkland_coppock_2018_errata.pdf`. The other two are descriptions of
+the heterogeneous-effects figures that the estimates behind those
+figures do not support, and they are discussed under Errata below.
 
 **The p-value that does not reproduce.** The paper reports that among
 the 779 elections in which the two candidates had different levels of
@@ -287,90 +315,125 @@ alongside a later draft of the paper.
 
 ## Errata
 
-The rewrite corrects no analytical error, because none of the
-discrepancies above is one. The three published numbers that do not
-reproduce are a transposition of two labels in one sentence, a p-value
-with no surviving code behind it, and a range stated more tightly than
-the estimates support. All three are recorded in the ground truth with
-`match = 0` and described in the Summary; none affects a conclusion.
+The rewrite corrects no analytical error in the deposited code, because
+none of the discrepancies above is one. What the comparison does turn up
+is misstated numbers in the article itself.
+
+**Four sentences carry a number the article’s own data do not support.**
+They are set out in `errata.qmd`, which renders to
+`kirkland_coppock_2018_errata.pdf` at the repository root: the
+transposition of the two ballot types in the experience-advantage
+comparison, the p-value of 0.791 that reproduces under no test, the
+count of municipalities in the mayoral dataset, and the range of
+political experience effects in the sentence describing Figure 3. Every
+corrected value in that note is computed at render time from
+`maintained/output/`, so it cannot go stale in the way the article did.
+None of the four changes a conclusion.
+
+**Two descriptions of the figures do not hold.** These are not misstated
+numbers and are not in the errata note, since the correction is a
+rewording rather than a value.
+
+- “Republican respondents marginally prefer white candidates while
+  Democrats marginally prefer nonwhite candidates” holds in the YouGov
+  sample, where all three Republican nonwhite estimates are negative. It
+  does not hold on MTurk, where Republican respondents prefer Asian
+  candidates to white candidates by 6.1 percentage points while
+  preferring white candidates to Black and Hispanic ones.
+- “Democratic respondents (but not Republican respondents) rate such
+  candidates as even more competent in the absence of party labels”
+  reads the difference column of Figure 7 as null for Republicans. Two
+  of the four Democratic intervals exclude zero, and so does one of the
+  four Republican ones, for candidates who have been mayor.
 
 ------------------------------------------------------------------------
 
 ## Ground Truth Verification
 
-| table_figure | claim | value_script | value_paper | match | value_rewrite | match_rewrite |
-|:---|:---|---:|---:|---:|---:|---:|
-| Table 1 | No previous political experience, nonpartisan N | 163.0000 | 163.000 | 1 | 163.0000 | 1 |
-| Table 1 | No previous political experience, nonpartisan % | 21.0000 | 21.000 | 1 | 21.0000 | 1 |
-| Table 1 | No previous political experience, partisan N | 72.0000 | 72.000 | 1 | 72.0000 | 1 |
-| Table 1 | No previous political experience, partisan % | 30.0000 | 30.000 | 1 | 30.0000 | 1 |
-| Table 1 | City legislator, nonpartisan N | 216.0000 | 216.000 | 1 | 216.0000 | 1 |
-| Table 1 | City legislator, nonpartisan % | 28.0000 | 28.000 | 1 | 28.0000 | 1 |
-| Table 1 | City legislator, partisan N | 39.0000 | 39.000 | 1 | 39.0000 | 1 |
-| Table 1 | City legislator, partisan % | 16.0000 | 16.000 | 1 | 16.0000 | 1 |
-| Table 1 | County legislator, nonpartisan N | 13.0000 | 13.000 | 1 | 13.0000 | 1 |
-| Table 1 | County legislator, nonpartisan % | 2.0000 | 2.000 | 1 | 2.0000 | 1 |
-| Table 1 | County legislator, partisan N | 3.0000 | 3.000 | 1 | 3.0000 | 1 |
-| Table 1 | County legislator, partisan % | 1.0000 | 1.000 | 1 | 1.0000 | 1 |
-| Table 1 | State legislator, nonpartisan N | 37.0000 | 37.000 | 1 | 37.0000 | 1 |
-| Table 1 | State legislator, nonpartisan % | 5.0000 | 5.000 | 1 | 5.0000 | 1 |
-| Table 1 | State legislator, partisan N | 18.0000 | 18.000 | 1 | 18.0000 | 1 |
-| Table 1 | State legislator, partisan % | 8.0000 | 8.000 | 1 | 8.0000 | 1 |
-| Table 1 | US legislator, nonpartisan N | 5.0000 | 5.000 | 1 | 5.0000 | 1 |
-| Table 1 | US legislator, nonpartisan % | 1.0000 | 1.000 | 1 | 1.0000 | 1 |
-| Table 1 | US legislator, partisan N | 4.0000 | 4.000 | 1 | 4.0000 | 1 |
-| Table 1 | US legislator, partisan % | 2.0000 | 2.000 | 1 | 2.0000 | 1 |
-| Table 1 | Mayor, nonpartisan N | 338.0000 | 338.000 | 1 | 338.0000 | 1 |
-| Table 1 | Mayor, nonpartisan % | 44.0000 | 44.000 | 1 | 44.0000 | 1 |
-| Table 1 | Mayor, partisan N | 102.0000 | 102.000 | 1 | 102.0000 | 1 |
-| Table 1 | Mayor, partisan % | 43.0000 | 43.000 | 1 | 43.0000 | 1 |
-| Table 1 | Total, nonpartisan N | 772.0000 | 772.000 | 1 | 772.0000 | 1 |
-| Table 1 | Total, nonpartisan % | 100.0000 | 100.000 | 1 | 100.0000 | 1 |
-| Table 1 | Total, partisan N | 238.0000 | 238.000 | 1 | 238.0000 | 1 |
-| Table 1 | Total, partisan % | 100.0000 | 100.000 | 1 | 100.0000 | 1 |
-| Table 1 | Chi-squared statistic | 21.1961 | 21.200 | 1 | 21.1961 | 1 |
-| Table 1 | Chi-squared p-value | 0.0015 | 0.002 | 1 | 0.0015 | 1 |
-| Text, p. 5 | Elections in which the candidates’ experience differs | 779.0000 | 779.000 | 1 | 779.0000 | 1 |
-| Text, p. 5 | More experienced candidate wins, partisan (%) | 61.2903 | 62.000 | 0 | 61.2903 | 0 |
-| Text, p. 5 | More experienced candidate wins, nonpartisan (%) | 62.0573 | 61.000 | 0 | 62.0573 | 0 |
-| Text, p. 5 | p-value on the partisan/nonpartisan difference | 0.8516 | 0.791 | 0 | 0.8516 | 0 |
-| Text, p. 5 | Attorneys or business executives, partisan (%) | NA | 63.000 | NA | NA | NA |
-| Text, p. 5 | Attorneys or business executives, nonpartisan (%) | NA | 48.000 | NA | NA | NA |
-| Table A.1 | MTurk N | 1204.0000 | 1204.000 | 1 | 1204.0000 | 1 |
-| Table A.1 | YouGov N | 1200.0000 | 1200.000 | 1 | 1200.0000 | 1 |
-| Table A.1 | MTurk Democrat share | 0.5810 | 0.581 | 1 | 0.5810 | 1 |
-| Table A.1 | MTurk Independent share | 0.1640 | 0.164 | 1 | 0.1640 | 1 |
-| Table A.1 | MTurk Republican share | 0.2540 | 0.254 | 1 | 0.2540 | 1 |
-| Table A.1 | YouGov Democrat share (weighted) | 0.3850 | 0.385 | 1 | 0.3850 | 1 |
-| Table A.1 | YouGov Independent share (weighted) | 0.2700 | 0.270 | 1 | 0.2700 | 1 |
-| Table A.1 | YouGov Republican share (weighted) | 0.3460 | 0.346 | 1 | 0.3460 | 1 |
-| Table A.1 | Respondent race, gender, ideology, education and age panels | NA | NA | NA | NA | NA |
-| Discussion | Correlation of MTurk and YouGov estimates | 0.9494 | 0.950 | 1 | 0.9494 | 1 |
-| Figure 3 | Political experience, MTurk nonpartisan, smallest effect (pp) | 22.6531 | 25.000 | 0 | 22.6531 | 0 |
-| Figure 3 | Political experience, MTurk nonpartisan, largest effect (pp) | 31.9673 | 30.000 | 0 | 31.9673 | 0 |
-| Figure 3 | Political experience, nonpartisan minus partisan, mean (pp) | 9.8941 | 10.000 | 1 | 9.8941 | 1 |
-| Figures 3 to 8, B.1, B.2, C.3, C.4 | All plotted coefficients and standard errors | NA | NA | NA | NA | NA |
+The ground truth carries one row per claim either instrument can reach:
+164 rows against the 178 numeric tokens extracted from the article and
+appendix. The claims left out are scale endpoints and category labels
+the deposit cannot reach, and numbers the article takes from other
+papers; they are recorded in `published_claims.csv` and verified against
+the sources they come from.
 
-Ground truth verification (50 rows)
+| Table or figure                    | Not evaluable | Does not match | Matches |
+|:-----------------------------------|--------------:|---------------:|--------:|
+| Analysis, footnote 5               |             2 |              0 |       0 |
+| Descriptive                        |             7 |              2 |      32 |
+| Design                             |             0 |              0 |      16 |
+| Discussion                         |             0 |              0 |       1 |
+| Figure 3                           |             0 |              2 |       2 |
+| Figures 3 to 8, B.1, B.2, C.3, C.4 |             0 |              0 |       1 |
+| Figures 5 and 6                    |             1 |              0 |       0 |
+| Observational text                 |             2 |              4 |      10 |
+| Table 1                            |             0 |              0 |      30 |
+| Table 2                            |             0 |              0 |       4 |
+| Table A.1                          |            40 |              0 |       8 |
 
-**Summary**: 41 of 46 verifiable claims match the published values; 5 do
-not. `ground_truth/build_ground_truth.R` rebuilds this table from
+Ground truth verification by component (164 rows)
+
+Every row that does not match, or that could not be evaluated for a
+reason specific to it, is below. The 40 Table A.1 cells the deposit
+cannot reach share one reason between them and are counted in the table
+above rather than listed one line each.
+
+| Claim | Published | Pipeline | Locus |
+|:---|:---|:---|:---|
+| Distinct municipalities | 225 | 237 | paper_internal |
+| Partisan elections, more experienced candidate wins (%) | 62 | 61.29 | paper_internal |
+| Nonpartisan elections, more experienced candidate wins (%) | 61 | 62.06 | paper_internal |
+| p-value on the partisan/nonpartisan difference | 0.791 | 0.8516 | paper_internal |
+| Political experience, MTurk nonpartisan, smallest effect (pp) | 25 | 22.65 | paper_internal |
+| Political experience, MTurk nonpartisan, largest effect (pp) | 30 | 31.97 | paper_internal |
+| Democrat preference for a female over a male candidate (pp) | 10 | – | unresolved |
+| Partisan elections, attorneys or business executives (%) | 63 | – | archive |
+| Nonpartisan elections, attorneys or business executives (%) | 48 | – | archive |
+| Agreement between the OLS and cjoint AMCE estimates | – | – | archive |
+| Agreement between the OLS and logit marginal effects | – | – | archive |
+| The MTurk sample is whiter, more male, more liberal, more Democratic, better educated and younger | – | – | archive |
+| Figure 3: the job experience, race, age and gender effects are relatively muted | – | – | – |
+| Figure 4: the gender and age effects are as small as in the MTurk sample | – | – | – |
+| Figures 5 and 6: the nonwhite effects are positive for Democrats and negative for Republicans | – | – | paper_internal |
+| Figure 5: the race and gender patterns do not differ much by election type | – | – | – |
+| Figure 7: the competence differences clear zero for Democrats and not for Republicans | – | – | paper_internal |
+| Figures 7 and 8: the race, gender and age effects on competence are small | – | – | – |
+| The candidate types rated most competent are the ones preferred in nonpartisan elections | – | – | – |
+| Appendix C: the competence results resemble the candidate preference results | – | – | – |
+
+Every claim that does not reproduce, and every one that cannot be
+evaluated
+
+**Summary**: 104 of 112 evaluable claims match the published values; 8
+do not. `ground_truth/build_ground_truth.R` rebuilds this table from
 `maintained/output/` at the end of every run. The only numbers typed
 into that script are the published values themselves, which serve as
 comparison targets and are never inputs to a computation.
+
+**The archive columns are empty, and that is a property of the
+deposit.** `value_script` and `match` are `NA` on every row. The
+deposited scripts write no files at all, keeping every result as an
+in-memory R object, as the archive’s own README explains; nothing in
+this repository re-derives those objects, so there is no archive number
+to read back. The comparison that can be made is between the article and
+the maintained rewrite, which is what `value_rewrite` and
+`match_rewrite` record. The one place the archive’s own output has been
+compared directly is the 729 figure estimates described under Figure
+Verification.
 
 ------------------------------------------------------------------------
 
 ## Maintained Rewrite
 
-The rewrite lives in `maintained/`: a shared `helpers.R` and fourteen
-scripts, one per published table or figure plus two for in-text
-quantities.
+The rewrite lives in `maintained/`: a shared `helpers.R`, one script per
+published table or figure, four for in-text quantities, and the claims
+file that prints every published number beside the sentence that states
+it.
 
 | Script | Output |
 |:---|:---|
 | helpers.R | Packages, both datasets, the estimation and plotting helpers |
-| table_1_observational_experience.R | output/table_1_observational_experience.csv, output/text_observational_chisq.csv |
+| table_1_observational_experience.R | output/table_1_observational_experience.csv, output/text_observational_chisq.csv, output/text_observational_dataset_description.csv |
 | table_a1_party_identification.R | output/table_a1_party_identification.csv |
 | figure_3_mturk_main_candidate_pref.R | output/figure_3_mturk_main_candidate_pref.{pdf,png,csv} |
 | figure_4_yougov_main_candidate_pref.R | output/figure_4_yougov_main_candidate_pref.{pdf,png,csv} |
@@ -382,8 +445,11 @@ quantities.
 | figure_b2_yougov_satisficing.R | output/figure_b2_yougov_satisficing.{pdf,png,csv} |
 | figure_c3_mturk_main_competence.R | output/figure_c3_mturk_main_competence.{pdf,png,csv} |
 | figure_c4_yougov_main_competence.R | output/figure_c4_yougov_main_competence.{pdf,png,csv} |
+| text_design_parameters.R | output/text_design_parameters.csv |
 | text_observational_experience_advantage.R | output/text_observational_experience_advantage.csv |
 | text_mturk_yougov_correlation.R | output/text_mturk_yougov_correlation.{csv,pdf,png} |
+| text_policy_index_het_fx.R | output/text_policy_index_het_fx.csv |
+| in_text_claims.R | Printed to the console: every published number beside its sentence |
 
 Maintained rewrite scripts
 
@@ -430,16 +496,33 @@ than a repair to it.
 which the archive computes and no earlier rewrite covered, and the one
 panel of Table A.1 the deposit can support. The in-text observational
 comparison on page 5 has no code anywhere in the archive or the
-recovered files; it is reconstructed here from the recovered data. Every
-figure now writes a CSV of the plotted estimates alongside the image,
-which is what makes a rerun diffable.
+recovered files; it is reconstructed here from the recovered data.
+`text_design_parameters.R` reads back the design facts the article
+states in prose (elections per subject, attributes per election type,
+the age levels, the endpoints of the competence scale) rather than
+leaving them asserted. Every figure now writes a CSV of the plotted
+estimates alongside the image, which is what makes a rerun diffable.
+
+**The policy-goal analysis is rewritten even though it was never
+published.** The Mechanism section reports results for a policy-goal
+index and cites “Appendix C.2” for them. There is no Appendix C.2: the
+published appendix has sections A, B and C only, C has no subsections,
+and the policy-goal analysis appears nowhere in it. Both deposited
+scripts compute it, so `text_policy_index_het_fx.R` reproduces those
+models and the two sentences the article bases on them can be checked.
+The index’s direction is documented nowhere, and the appendix section
+that would have defined it does not exist, so the candidate’s own party
+label is used as the anchor: a Republican candidate raises the index and
+a Democratic candidate lowers it in every sample by respondent party
+cell, which fixes the high end as the conservative end. Read that way
+both sentences hold.
 
 **What the rewrite leaves alone.** The confidence bars are drawn at plus
 or minus 1.96 standard errors, as the archive draws them, rather than at
 a t quantile on the cluster-adjusted degrees of freedom. The
-valence-index and policy-index analyses the archive computes are not
-rewritten, since neither appears in the published paper or appendix. The
-unweighted YouGov specifications stay unweighted.
+valence-index analysis the archive computes is not rewritten, since no
+sentence in the article or the appendix refers to it. The unweighted
+YouGov specifications stay unweighted.
 
 ------------------------------------------------------------------------
 
@@ -468,58 +551,35 @@ alt="The Discussion’s correlation of 0.95, plotted. Each point is one attribut
 
 ------------------------------------------------------------------------
 
+## In-Text Claims
+
+`maintained/in_text_claims.R` carries one block per published claim: the
+article’s sentence verbatim in a comment, then code that reads
+`maintained/output/` and prints the number in the article’s own units
+and rounding. It never fits a model and never reads the ground truth. It
+reaches the same quantities as `build_ground_truth.R` by its own route
+through the same output files, so a disagreement between the two is a
+finding rather than a coincidence.
+
+Descriptive claims get a computed truth value rather than a number, and
+the evidence behind it is printed on the line beneath. A claim that
+reduces to a boolean gets a verdict; “relatively muted”, “similarly
+small” and “do not differ much” set no threshold, so those blocks print
+the distribution and no verdict, because a verdict would invent the
+threshold the sentence withholds.
+
+Coverage is a gate rather than a convention. `build_ground_truth.R` runs
+the claims file non-interactively, reads the claim ids back off the
+lines it actually printed, and halts unless every pipeline and
+descriptive row of `published_claims.csv` appears among them, unless
+every id printed is one the article makes, and unless the ids declared
+in the blocks and the ids printed at run time are the same set. Matching
+the declarations as text would pass a block that errors or prints
+nothing.
+
+------------------------------------------------------------------------
+
 ## Maintained Rewrite Verification
-
-| table_figure | claim | value_paper | value_rewrite | match_rewrite |
-|:---|:---|---:|---:|---:|
-| Table 1 | No previous political experience, nonpartisan N | 163.000 | 163.0000 | 1 |
-| Table 1 | No previous political experience, nonpartisan % | 21.000 | 21.0000 | 1 |
-| Table 1 | No previous political experience, partisan N | 72.000 | 72.0000 | 1 |
-| Table 1 | No previous political experience, partisan % | 30.000 | 30.0000 | 1 |
-| Table 1 | City legislator, nonpartisan N | 216.000 | 216.0000 | 1 |
-| Table 1 | City legislator, nonpartisan % | 28.000 | 28.0000 | 1 |
-| Table 1 | City legislator, partisan N | 39.000 | 39.0000 | 1 |
-| Table 1 | City legislator, partisan % | 16.000 | 16.0000 | 1 |
-| Table 1 | County legislator, nonpartisan N | 13.000 | 13.0000 | 1 |
-| Table 1 | County legislator, nonpartisan % | 2.000 | 2.0000 | 1 |
-| Table 1 | County legislator, partisan N | 3.000 | 3.0000 | 1 |
-| Table 1 | County legislator, partisan % | 1.000 | 1.0000 | 1 |
-| Table 1 | State legislator, nonpartisan N | 37.000 | 37.0000 | 1 |
-| Table 1 | State legislator, nonpartisan % | 5.000 | 5.0000 | 1 |
-| Table 1 | State legislator, partisan N | 18.000 | 18.0000 | 1 |
-| Table 1 | State legislator, partisan % | 8.000 | 8.0000 | 1 |
-| Table 1 | US legislator, nonpartisan N | 5.000 | 5.0000 | 1 |
-| Table 1 | US legislator, nonpartisan % | 1.000 | 1.0000 | 1 |
-| Table 1 | US legislator, partisan N | 4.000 | 4.0000 | 1 |
-| Table 1 | US legislator, partisan % | 2.000 | 2.0000 | 1 |
-| Table 1 | Mayor, nonpartisan N | 338.000 | 338.0000 | 1 |
-| Table 1 | Mayor, nonpartisan % | 44.000 | 44.0000 | 1 |
-| Table 1 | Mayor, partisan N | 102.000 | 102.0000 | 1 |
-| Table 1 | Mayor, partisan % | 43.000 | 43.0000 | 1 |
-| Table 1 | Total, nonpartisan N | 772.000 | 772.0000 | 1 |
-| Table 1 | Total, nonpartisan % | 100.000 | 100.0000 | 1 |
-| Table 1 | Total, partisan N | 238.000 | 238.0000 | 1 |
-| Table 1 | Total, partisan % | 100.000 | 100.0000 | 1 |
-| Table 1 | Chi-squared statistic | 21.200 | 21.1961 | 1 |
-| Table 1 | Chi-squared p-value | 0.002 | 0.0015 | 1 |
-| Text, p. 5 | Elections in which the candidates’ experience differs | 779.000 | 779.0000 | 1 |
-| Text, p. 5 | More experienced candidate wins, partisan (%) | 62.000 | 61.2903 | 0 |
-| Text, p. 5 | More experienced candidate wins, nonpartisan (%) | 61.000 | 62.0573 | 0 |
-| Text, p. 5 | p-value on the partisan/nonpartisan difference | 0.791 | 0.8516 | 0 |
-| Table A.1 | MTurk N | 1204.000 | 1204.0000 | 1 |
-| Table A.1 | YouGov N | 1200.000 | 1200.0000 | 1 |
-| Table A.1 | MTurk Democrat share | 0.581 | 0.5810 | 1 |
-| Table A.1 | MTurk Independent share | 0.164 | 0.1640 | 1 |
-| Table A.1 | MTurk Republican share | 0.254 | 0.2540 | 1 |
-| Table A.1 | YouGov Democrat share (weighted) | 0.385 | 0.3850 | 1 |
-| Table A.1 | YouGov Independent share (weighted) | 0.270 | 0.2700 | 1 |
-| Table A.1 | YouGov Republican share (weighted) | 0.346 | 0.3460 | 1 |
-| Discussion | Correlation of MTurk and YouGov estimates | 0.950 | 0.9494 | 1 |
-| Figure 3 | Political experience, MTurk nonpartisan, smallest effect (pp) | 25.000 | 22.6531 | 0 |
-| Figure 3 | Political experience, MTurk nonpartisan, largest effect (pp) | 30.000 | 31.9673 | 0 |
-| Figure 3 | Political experience, nonpartisan minus partisan, mean (pp) | 10.000 | 9.8941 | 1 |
-
-Rewrite verification: 41 of 46 claims match published values
 
 Two full runs of `run_all.R` produce byte-identical CSV and PNG output.
 Only the PDF figures differ between runs, because a PDF records the time

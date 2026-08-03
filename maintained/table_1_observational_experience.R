@@ -1,6 +1,7 @@
 # kirkland_coppock_2018/maintained/table_1_observational_experience.R
 # Output: output/table_1_observational_experience.csv,
-#   output/text_observational_chisq.csv
+#   output/text_observational_chisq.csv,
+#   output/text_observational_dataset_description.csv
 # Depends on: helpers.R, recovered/observational_mayors_replication.rdata
 # Description: Political experience of the winning candidate in 1,010 US mayoral
 #   elections, by whether the ballot was partisan (Table 1), and the chi-squared test
@@ -16,6 +17,24 @@ source(here::here("maintained", "helpers.R"))
 # round trip; without ungroup() the summarize below silently keeps the stale groups.
 load(here("recovered", "observational_mayors_replication.rdata"))
 mayors <- ungroup(mayors)
+
+# The dataset as the article describes it ----
+# The paragraph introducing Table 1 states how many elections the dataset holds, how
+# many municipalities they fall in, and the years they span. The variable list is
+# recorded here too, because the sentence after Table 1 reports candidates' careers
+# and nothing in the file records one.
+dataset_description <- tibble(
+  n_elections = n_distinct(mayors$contest_id),
+  n_candidates = nrow(mayors),
+  n_municipalities = n_distinct(mayors$fipsid),
+  year_first = min(mayors$year),
+  year_last = max(mayors$year),
+  n_variables = ncol(mayors),
+  variables = paste(names(mayors), collapse = "; ")
+)
+
+write_csv(dataset_description,
+          here("maintained", "output", "text_observational_dataset_description.csv"))
 
 experience_labels <- c(
   "no experience" = "No previous political experience",

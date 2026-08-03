@@ -30,12 +30,24 @@ source(here::here("maintained", "figure_c3_mturk_main_competence.R"))
 source(here::here("maintained", "figure_c4_yougov_main_competence.R"))
 
 # In-text quantities ----
+source(here::here("maintained", "text_design_parameters.R"))
 source(here::here("maintained", "text_observational_experience_advantage.R"))
 source(here::here("maintained", "text_mturk_yougov_correlation.R"))
+# The Mechanism section reports results for the policy-goal index and cites an
+# appendix subsection that does not exist, so these estimates have no published
+# counterpart; see the report.
+source(here::here("maintained", "text_policy_index_het_fx.R"))
 
 # Ground truth ----
-# Rebuilds the comparison table from the outputs above, so it cannot go stale.
+# Rebuilds the comparison table from the outputs above, so it cannot go stale, and
+# gates the coverage of maintained/in_text_claims.R against the published extraction.
 source(here::here("ground_truth", "build_ground_truth.R"))
+
+# In-text claims ----
+# Every number the article and the appendix print, beside the sentence that prints it.
+# build_ground_truth.R has already run this file non-interactively as its coverage
+# gate; sourcing it here puts the output in front of anyone running the pipeline.
+source(here::here("maintained", "in_text_claims.R"))
 
 # Deposited archive, again ----
 # The check at the top of this file is a precondition: it says original/ was intact

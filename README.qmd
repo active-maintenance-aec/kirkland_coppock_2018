@@ -25,22 +25,39 @@ here::i_am("README.qmd")
 latex_out <- knitr::is_latex_output()
 
 out <- function(f) read_csv(here("maintained", "output", f), show_col_types = FALSE)
+# value_paper holds the string the article prints, thousands separators and all, so it
+# is read as text rather than re-guessed into a double that would print 225.000.
 gt <- read_csv(here("ground_truth", "kirkland_coppock_2018_ground_truth.csv"),
-               show_col_types = FALSE)
+               col_types = cols(value_paper = col_character(), .default = col_guess()))
+published_claims <- read_csv(here("ground_truth", "published_claims.csv"),
+                             show_col_types = FALSE)
 manifest <- read_csv(here("original_manifest.csv"), show_col_types = FALSE)
 
 chi <- out("text_observational_chisq.csv")
 adv <- out("text_observational_experience_advantage.csv")
+dataset <- out("text_observational_dataset_description.csv")
 corr <- out("text_mturk_yougov_correlation.csv")
 pearson_archive <- corr$correlation[corr$method == "pearson" &
                                       corr$specification == "archive (YouGov unweighted)"]
 pearson_weighted <- corr$correlation[corr$method == "pearson" &
                                        corr$specification == "YouGov weighted"]
 
+n_extracted <- nrow(published_claims)
 n_claims <- nrow(gt)
 n_verifiable <- sum(!is.na(gt$match_rewrite))
 n_match <- sum(gt$match_rewrite == 1, na.rm = TRUE)
 n_miss <- sum(gt$match_rewrite == 0, na.rm = TRUE)
+n_paper_internal <- sum(gt$defect_locus == "paper_internal", na.rm = TRUE)
+n_archive_locus <- sum(gt$defect_locus == "archive", na.rm = TRUE)
+n_descriptive <- sum(gt$table_figure == "Descriptive")
+n_descriptive_hold <- sum(gt$table_figure == "Descriptive" & gt$match_rewrite == 1,
+                          na.rm = TRUE)
+n_descriptive_fail <- sum(gt$table_figure == "Descriptive" & gt$match_rewrite == 0,
+                          na.rm = TRUE)
+n_no_threshold <- sum(gt$table_figure == "Descriptive" & is.na(gt$match_rewrite) &
+                        is.na(gt$defect_locus))
+n_a1_absent <- sum(str_starts(gt$claim_id, "table_a1_") & is.na(gt$match_rewrite))
+n_errata <- 4
 
 fig_img <- function(stem) {
   here("maintained", "output",
@@ -62,7 +79,7 @@ This repository holds the actively maintained replication code for Kirkland and 
 
 **`recovered/` is different and is committed.** The observational analysis behind Table 1 depends on a data file and a script that the deposit does not contain, though its own README lists both. The authors supplied them, and since they exist nowhere else this repository carries them.
 
-**Repository layout.** `maintained/` is the maintained rewrite: one script per published table or figure, writing to `output/`, which is committed so a reader can compare a fresh run against it without downloading anything. `ground_truth/` ties every published number to the code that produces it. `original/` is created by the download script and is deliberately absent from the repository. This README is the reproducibility report, also available as a PDF in `report/`.
+**Repository layout.** `maintained/` is the maintained rewrite: one script per published table or figure, writing to `output/`, which is committed so a reader can compare a fresh run against it without downloading anything. `ground_truth/` ties every published number to the code that produces it, starting from `published_claims.csv`, an extraction of every numeric token in the article and the online appendix. `maintained/in_text_claims.R` prints each of those numbers beside the sentence that states it. `original/` is created by the download script and is deliberately absent from the repository. `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note listing the article's misstated numbers. This README is the reproducibility report, also available as a PDF in `report/`.
 
 **License.** CC0 1.0 Universal, matching the terms of the deposit this repository maintains, so nothing in the chain is more restrictive than the archive itself. See `LICENSE`.
 
@@ -72,7 +89,7 @@ This repository holds the actively maintained replication code for Kirkland and 
 source("run_all.R")
 ```
 
-That fetches the deposited archive from Dataverse, verifies its `r nrow(manifest)` checksums, produces every published table and figure into `maintained/output/`, and rebuilds the ground truth table from those outputs. It takes about a minute. Individual scripts can be run on their own in any order; only `ground_truth/build_ground_truth.R` depends on the others having run first.
+That fetches the deposited archive from Dataverse, verifies its `r nrow(manifest)` checksums, produces every published table and figure into `maintained/output/`, rebuilds the ground truth table from those outputs, prints every published number beside the sentence that states it, and verifies the deposit again. It takes about a minute. Individual scripts can be run on their own in any order; only `ground_truth/build_ground_truth.R` and `maintained/in_text_claims.R` depend on the others having run first.
 
 Required packages: tidyverse, estimatr, knitr, kableExtra, here. Paths resolve through `here`, so nothing depends on the working directory and the scripts work equally well under `Rscript` outside RStudio. A successful run overwrites `maintained/output/`, which is committed: **`git diff` on that folder is the reproduction check**, and the CSV and PNG output should come back byte-identical. The eleven PDF figures always show as changed, because a PDF records the time it was written; compare their PNG twins instead.
 
@@ -82,7 +99,7 @@ Required packages: tidyverse, estimatr, knitr, kableExtra, here. Paths resolve t
 
 **Research question**: When a ballot carries no party label, what do voters use instead? The paper argues that without the partisan shortcut voters fall back on other indicators of fitness for office, political experience above all.
 
-**Design**: Three pieces of evidence. An observational record of 1,010 US mayoral elections held between 1945 and 2007 across 225 municipalities, comparing the political experience of winners under partisan and nonpartisan ballots. Then two conjoint survey experiments running the same design on different samples: an MTurk convenience sample (N = 1,204) and a nationally representative YouGov sample (N = 1,200). Each subject judged five successive elections between two candidates whose race, gender, age, career experience, political experience and, in half the elections, party were fully randomized. Outcomes are candidate choice and a 0 to 100 competence rating. Estimation is OLS with standard errors clustered by respondent, and effects are compared across election types by interacting every attribute with an indicator for the nonpartisan ballot.
+**Design**: Three pieces of evidence. An observational record of `r format(dataset$n_elections, big.mark = ",")` US mayoral elections held between `r dataset$year_first` and `r dataset$year_last` across `r dataset$n_municipalities` municipalities, comparing the political experience of winners under partisan and nonpartisan ballots. Then two conjoint survey experiments running the same design on different samples: an MTurk convenience sample (N = 1,204) and a nationally representative YouGov sample (N = 1,200). Each subject judged five successive elections between two candidates whose race, gender, age, career experience, political experience and, in half the elections, party were fully randomized. Outcomes are candidate choice and a 0 to 100 competence rating. Estimation is OLS with standard errors clustered by respondent, and effects are compared across election types by interacting every attribute with an indicator for the nonpartisan ballot.
 
 **Main finding**: Political experience carries substantially more weight when the party label is withheld. In the MTurk sample the political experience coefficients are about 10 percentage points larger in nonpartisan than in partisan elections, and the same interaction appears in the YouGov sample. The competence ratings move the same way, which is the paper's evidence for the mechanism it proposes. The two samples' estimates correlate at `r sprintf("%.2f", pearson_archive)`.
 
@@ -106,7 +123,7 @@ With the YouGov file renamed, all three deposited scripts run to completion in a
 
 ### Does the maintained rewrite reproduce the paper?
 
-Yes for everything the paper prints, with exceptions in the observational paragraph on page 5 and in one sentence describing Figure 3.
+Yes for everything the paper prints, with exceptions in the observational paragraph on page 5, in one sentence describing Figure 3, and in two sentences describing patterns in the heterogeneous-effects figures.
 
 ```{r summary-table}
 verdict_df <- tibble::tribble(
@@ -114,6 +131,8 @@ verdict_df <- tibble::tribble(
   "Table 1 (24 cells plus both totals)",             "Reproduces exactly",
   "Table 1 chi-squared statistic",                   "Reproduces (21.2)",
   "Table 1 chi-squared p-value",                     "Reproduces; the archive's test is an unseeded simulation and 0.002 is inside its range",
+  "Text p. 5, 1,010 elections and the 1945 to 2007 span", "Reproduce exactly",
+  "Text p. 5, 225 municipalities",                   paste0("Does not reproduce (", dataset$n_municipalities, " here)"),
   "Text p. 5, 779 elections",                        "Reproduces exactly",
   "Text p. 5, 62 and 61 per cent",                   "Reproduce, but the two labels are transposed in the sentence",
   "Text p. 5, p = 0.791",                            paste0("Does not reproduce (", sprintf("%.3f", adv$p_value_hc2), " here)"),
@@ -123,6 +142,8 @@ verdict_df <- tibble::tribble(
   "Figures 3 to 8, B.1, B.2, C.3, C.4",              "Reproduce; all 729 estimates and standard errors agree with the archive to 4e-13",
   "Text on Figure 3, 25 to 30 percentage points",    "Range is tight at both ends; the estimates run 22.7 to 32.0",
   "Text on Figure 3, about 10 percentage points",    "Reproduces (9.1 to 11.7)",
+  "Figures 5 and 6, Republicans prefer white candidates", "Holds on YouGov and not on MTurk, where Republicans prefer Asian candidates by 6.1 points",
+  "Figure 7, Republicans show no competence gap by election type", "Does not hold; the Republican estimate for Mayor excludes zero",
   "Discussion, correlation of 0.95",                 paste0("Reproduces (", sprintf("%.4f", pearson_archive), ") on the archive's specification")
 )
 
@@ -136,7 +157,9 @@ if (latex_out) {
 k
 ```
 
-Of the `r n_claims` recorded ground truth claims, `r n_verifiable` are verifiable and `r n_match` of them match.
+Every numeric token in the article and the online appendix was extracted by hand into `ground_truth/published_claims.csv`, `r n_extracted` of them, and each classified. `r sum(published_claims$claim_type == "pipeline")` are quantities the pipeline should produce, `r sum(published_claims$claim_type == "descriptive")` are claims about shape, sign or ordering that need a computed truth value, and the rest are scale endpoints, category labels, and numbers copied from other papers. The ground truth carries `r n_claims` rows, one for every claim either instrument can reach; `r n_verifiable` of them can be evaluated and `r n_match` come out right. Of the `r n_claims - n_verifiable` that cannot, `r n_archive_locus` are quantities the deposit does not record at all, `r n_no_threshold` are descriptions whose wording sets no threshold to test against, and one is a sentence that names neither a sample nor an election type.
+
+**The article contradicts its own data on `r n_paper_internal` claims.** Six of them are misstated numbers in sentences, gathered into the `r n_errata` entries of `kirkland_coppock_2018_errata.pdf`. The other two are descriptions of the heterogeneous-effects figures that the estimates behind those figures do not support, and they are discussed under Errata below.
 
 **The p-value that does not reproduce.** The paper reports that among the 779 elections in which the two candidates had different levels of political experience, the more experienced candidate won about 62 per cent of the time in partisan elections and 61 per cent in nonpartisan elections, and that "this difference is not statistically significant (p = 0.791)." The subset size reproduces exactly, and so do both percentages, though the sentence attaches them to the wrong ballot types: the data give `r sprintf("%.1f", adv$pct_nonpartisan)` per cent nonpartisan and `r sprintf("%.1f", adv$pct_partisan)` per cent partisan. The p-value does not reproduce under any standard test of that comparison. A regression with HC2 errors gives `r sprintf("%.3f", adv$p_value_hc2)`, a chi-squared test gives `r sprintf("%.3f", adv$p_value_chisq)`, and Fisher's exact test, a logit and a t test all land near 0.85. No deposited or recovered script computes this quantity, so there is no code to inspect. The stated conclusion, that the difference is not significant, is unaffected either way: 0.791 and 0.85 lead to the same reading.
 
@@ -192,38 +215,74 @@ k
 
 ## Errata
 
-The rewrite corrects no analytical error, because none of the discrepancies above is one. The three published numbers that do not reproduce are a transposition of two labels in one sentence, a p-value with no surviving code behind it, and a range stated more tightly than the estimates support. All three are recorded in the ground truth with `match = 0` and described in the Summary; none affects a conclusion.
+The rewrite corrects no analytical error in the deposited code, because none of the discrepancies above is one. What the comparison does turn up is misstated numbers in the article itself.
+
+**Four sentences carry a number the article's own data do not support.** They are set out in `errata.qmd`, which renders to `kirkland_coppock_2018_errata.pdf` at the repository root: the transposition of the two ballot types in the experience-advantage comparison, the p-value of 0.791 that reproduces under no test, the count of municipalities in the mayoral dataset, and the range of political experience effects in the sentence describing Figure 3. Every corrected value in that note is computed at render time from `maintained/output/`, so it cannot go stale in the way the article did. None of the four changes a conclusion.
+
+**Two descriptions of the figures do not hold.** These are not misstated numbers and are not in the errata note, since the correction is a rewording rather than a value.
+
+- "Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates" holds in the YouGov sample, where all three Republican nonwhite estimates are negative. It does not hold on MTurk, where Republican respondents prefer Asian candidates to white candidates by 6.1 percentage points while preferring white candidates to Black and Hispanic ones.
+- "Democratic respondents (but not Republican respondents) rate such candidates as even more competent in the absence of party labels" reads the difference column of Figure 7 as null for Republicans. Two of the four Democratic intervals exclude zero, and so does one of the four Republican ones, for candidates who have been mayor.
 
 ---
 
 ## Ground Truth Verification
 
-```{r gt-table}
-k <- gt |>
-  select(table_figure, claim, value_script, value_paper, match, value_rewrite, match_rewrite) |>
-  kable(booktabs = TRUE, digits = 4,
-        caption = paste0("Ground truth verification (", nrow(gt), " rows)"))
+The ground truth carries one row per claim either instrument can reach: `r n_claims` rows against the `r n_extracted` numeric tokens extracted from the article and appendix. The claims left out are scale endpoints and category labels the deposit cannot reach, and numbers the article takes from other papers; they are recorded in `published_claims.csv` and verified against the sources they come from.
+
+```{r gt-summary-table}
+gt_summary <- gt |>
+  mutate(Verdict = case_when(match_rewrite == 1 ~ "Matches",
+                             match_rewrite == 0 ~ "Does not match",
+                             .default = "Not evaluable")) |>
+  count(`Table or figure` = table_figure, Verdict) |>
+  pivot_wider(names_from = Verdict, values_from = n, values_fill = 0)
+
+k <- kable(gt_summary, booktabs = TRUE,
+           caption = paste0("Ground truth verification by component (", nrow(gt), " rows)"))
 if (latex_out) {
   k <- k |>
-    kable_styling(latex_options = c("striped", "hold_position"), font_size = 7) |>
-    column_spec(2, width = "6.5cm")
+    kable_styling(latex_options = c("striped", "hold_position"), font_size = 8) |>
+    column_spec(1, width = "7cm")
 }
 k
 ```
 
-**Summary**: `r n_match` of `r n_verifiable` verifiable claims match the published values; `r n_miss` do not. `ground_truth/build_ground_truth.R` rebuilds this table from `maintained/output/` at the end of every run. The only numbers typed into that script are the published values themselves, which serve as comparison targets and are never inputs to a computation.
+Every row that does not match, or that could not be evaluated for a reason specific to it, is below. The `r n_a1_absent` Table A.1 cells the deposit cannot reach share one reason between them and are counted in the table above rather than listed one line each.
+
+```{r gt-detail-table}
+k <- gt |>
+  filter(match_rewrite == 0 |
+           (is.na(match_rewrite) & !str_starts(claim_id, "table_a1_"))) |>
+  transmute(Claim = claim, Published = replace_na(value_paper, "--"),
+            Pipeline = if_else(is.na(value_rewrite), "--",
+                               formatC(value_rewrite, format = "fg", digits = 4)),
+            Locus = replace_na(defect_locus, "--")) |>
+  kable(booktabs = TRUE,
+        caption = "Every claim that does not reproduce, and every one that cannot be evaluated")
+if (latex_out) {
+  k <- k |>
+    kable_styling(latex_options = c("striped", "hold_position"), font_size = 7) |>
+    column_spec(1, width = "8cm")
+}
+k
+```
+
+**Summary**: `r n_match` of `r n_verifiable` evaluable claims match the published values; `r n_miss` do not. `ground_truth/build_ground_truth.R` rebuilds this table from `maintained/output/` at the end of every run. The only numbers typed into that script are the published values themselves, which serve as comparison targets and are never inputs to a computation.
+
+**The archive columns are empty, and that is a property of the deposit.** `value_script` and `match` are `NA` on every row. The deposited scripts write no files at all, keeping every result as an in-memory R object, as the archive's own README explains; nothing in this repository re-derives those objects, so there is no archive number to read back. The comparison that can be made is between the article and the maintained rewrite, which is what `value_rewrite` and `match_rewrite` record. The one place the archive's own output has been compared directly is the 729 figure estimates described under Figure Verification.
 
 ---
 
 ## Maintained Rewrite
 
-The rewrite lives in `maintained/`: a shared `helpers.R` and fourteen scripts, one per published table or figure plus two for in-text quantities.
+The rewrite lives in `maintained/`: a shared `helpers.R`, one script per published table or figure, four for in-text quantities, and the claims file that prints every published number beside the sentence that states it.
 
 ```{r scripts-table}
 scripts_df <- tibble::tribble(
   ~Script,                                        ~Output,
   "helpers.R",                                    "Packages, both datasets, the estimation and plotting helpers",
-  "table_1_observational_experience.R",           "output/table_1_observational_experience.csv, output/text_observational_chisq.csv",
+  "table_1_observational_experience.R",           "output/table_1_observational_experience.csv, output/text_observational_chisq.csv, output/text_observational_dataset_description.csv",
   "table_a1_party_identification.R",              "output/table_a1_party_identification.csv",
   "figure_3_mturk_main_candidate_pref.R",         "output/figure_3_mturk_main_candidate_pref.{pdf,png,csv}",
   "figure_4_yougov_main_candidate_pref.R",        "output/figure_4_yougov_main_candidate_pref.{pdf,png,csv}",
@@ -235,8 +294,11 @@ scripts_df <- tibble::tribble(
   "figure_b2_yougov_satisficing.R",               "output/figure_b2_yougov_satisficing.{pdf,png,csv}",
   "figure_c3_mturk_main_competence.R",            "output/figure_c3_mturk_main_competence.{pdf,png,csv}",
   "figure_c4_yougov_main_competence.R",           "output/figure_c4_yougov_main_competence.{pdf,png,csv}",
+  "text_design_parameters.R",                     "output/text_design_parameters.csv",
   "text_observational_experience_advantage.R",    "output/text_observational_experience_advantage.csv",
-  "text_mturk_yougov_correlation.R",              "output/text_mturk_yougov_correlation.{csv,pdf,png}"
+  "text_mturk_yougov_correlation.R",              "output/text_mturk_yougov_correlation.{csv,pdf,png}",
+  "text_policy_index_het_fx.R",                   "output/text_policy_index_het_fx.csv",
+  "in_text_claims.R",                             "Printed to the console: every published number beside its sentence"
 )
 
 k <- kable(scripts_df, booktabs = TRUE, caption = "Maintained rewrite scripts")
@@ -282,9 +344,11 @@ k
 
 **The weighting decisions are surfaced, not defaulted.** The archive applies the YouGov survey weights to the main-effects figures (4 and C.4) and to the satisficing figure (B.2), but not to the heterogeneous-effects figures (6 and 8) and not to the four models behind the correlation in the Discussion. The rewrite reproduces each figure as the archive specifies it, and `election_type_panels()` takes `weighted` as a required argument with no default so the choice is visible at every call site. Weighting the heterogeneous-effects models would move individual estimates by up to 0.04 and the reported correlation from `r sprintf("%.2f", pearson_archive)` to `r sprintf("%.2f", pearson_weighted)`, which is a change to the analysis rather than a repair to it.
 
-**What the rewrite adds.** The published appendix figures B.1 and B.2, which the archive computes and no earlier rewrite covered, and the one panel of Table A.1 the deposit can support. The in-text observational comparison on page 5 has no code anywhere in the archive or the recovered files; it is reconstructed here from the recovered data. Every figure now writes a CSV of the plotted estimates alongside the image, which is what makes a rerun diffable.
+**What the rewrite adds.** The published appendix figures B.1 and B.2, which the archive computes and no earlier rewrite covered, and the one panel of Table A.1 the deposit can support. The in-text observational comparison on page 5 has no code anywhere in the archive or the recovered files; it is reconstructed here from the recovered data. `text_design_parameters.R` reads back the design facts the article states in prose (elections per subject, attributes per election type, the age levels, the endpoints of the competence scale) rather than leaving them asserted. Every figure now writes a CSV of the plotted estimates alongside the image, which is what makes a rerun diffable.
 
-**What the rewrite leaves alone.** The confidence bars are drawn at plus or minus 1.96 standard errors, as the archive draws them, rather than at a t quantile on the cluster-adjusted degrees of freedom. The valence-index and policy-index analyses the archive computes are not rewritten, since neither appears in the published paper or appendix. The unweighted YouGov specifications stay unweighted.
+**The policy-goal analysis is rewritten even though it was never published.** The Mechanism section reports results for a policy-goal index and cites "Appendix C.2" for them. There is no Appendix C.2: the published appendix has sections A, B and C only, C has no subsections, and the policy-goal analysis appears nowhere in it. Both deposited scripts compute it, so `text_policy_index_het_fx.R` reproduces those models and the two sentences the article bases on them can be checked. The index's direction is documented nowhere, and the appendix section that would have defined it does not exist, so the candidate's own party label is used as the anchor: a Republican candidate raises the index and a Democratic candidate lowers it in every sample by respondent party cell, which fixes the high end as the conservative end. Read that way both sentences hold.
+
+**What the rewrite leaves alone.** The confidence bars are drawn at plus or minus 1.96 standard errors, as the archive draws them, rather than at a t quantile on the cluster-adjusted degrees of freedom. The valence-index analysis the archive computes is not rewritten, since no sentence in the article or the appendix refers to it. The unweighted YouGov specifications stay unweighted.
 
 ---
 
@@ -310,23 +374,17 @@ knitr::include_graphics(fig_img("text_mturk_yougov_correlation"))
 
 ---
 
+## In-Text Claims
+
+`maintained/in_text_claims.R` carries one block per published claim: the article's sentence verbatim in a comment, then code that reads `maintained/output/` and prints the number in the article's own units and rounding. It never fits a model and never reads the ground truth. It reaches the same quantities as `build_ground_truth.R` by its own route through the same output files, so a disagreement between the two is a finding rather than a coincidence.
+
+Descriptive claims get a computed truth value rather than a number, and the evidence behind it is printed on the line beneath. A claim that reduces to a boolean gets a verdict; "relatively muted", "similarly small" and "do not differ much" set no threshold, so those blocks print the distribution and no verdict, because a verdict would invent the threshold the sentence withholds.
+
+Coverage is a gate rather than a convention. `build_ground_truth.R` runs the claims file non-interactively, reads the claim ids back off the lines it actually printed, and halts unless every pipeline and descriptive row of `published_claims.csv` appears among them, unless every id printed is one the article makes, and unless the ids declared in the blocks and the ids printed at run time are the same set. Matching the declarations as text would pass a block that errors or prints nothing.
+
+---
+
 ## Maintained Rewrite Verification
-
-```{r rewrite-verify}
-rv <- gt |>
-  filter(!is.na(match_rewrite)) |>
-  select(table_figure, claim, value_paper, value_rewrite, match_rewrite)
-
-k <- kable(rv, booktabs = TRUE, digits = 4,
-           caption = paste0("Rewrite verification: ", sum(rv$match_rewrite == 1),
-                            " of ", nrow(rv), " claims match published values"))
-if (latex_out) {
-  k <- k |>
-    kable_styling(latex_options = c("striped", "hold_position"), font_size = 7) |>
-    column_spec(2, width = "7cm")
-}
-k
-```
 
 Two full runs of `run_all.R` produce byte-identical CSV and PNG output. Only the PDF figures differ between runs, because a PDF records the time it was written.
 

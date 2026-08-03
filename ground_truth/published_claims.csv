@@ -1,0 +1,179 @@
+claim_id,location,claim_type,value_paper
+intro_progressive_century,"Introduction, p. 2",transcribed,20
+intro_experience_gap_pp,"Introduction, p. 4",pipeline,10
+intro_information_pieces_min,"Introduction, p. 4",definitional,5
+intro_information_pieces_max,"Introduction, p. 4",definitional,6
+theory_lim_snyder_correlation_low,"Information Shortcuts in Nonpartisan Elections, p. 6",transcribed,0.88
+theory_lim_snyder_correlation_high,"Information Shortcuts in Nonpartisan Elections, p. 6",transcribed,0.99
+obs_n_elections,"Information Shortcuts in Nonpartisan Elections, p. 6",pipeline,1010
+obs_year_first,"Information Shortcuts in Nonpartisan Elections, p. 6",pipeline,1945
+obs_year_last,"Information Shortcuts in Nonpartisan Elections, p. 6",pipeline,2007
+obs_n_municipalities,"Information Shortcuts in Nonpartisan Elections, p. 6",pipeline,225
+table_1_no_previous_political_experience_n_nonpartisan,Table 1,pipeline,163
+table_1_no_previous_political_experience_pct_nonpartisan,Table 1,pipeline,21
+table_1_no_previous_political_experience_n_partisan,Table 1,pipeline,72
+table_1_no_previous_political_experience_pct_partisan,Table 1,pipeline,30
+table_1_city_legislator_n_nonpartisan,Table 1,pipeline,216
+table_1_city_legislator_pct_nonpartisan,Table 1,pipeline,28
+table_1_city_legislator_n_partisan,Table 1,pipeline,39
+table_1_city_legislator_pct_partisan,Table 1,pipeline,16
+table_1_county_legislator_n_nonpartisan,Table 1,pipeline,13
+table_1_county_legislator_pct_nonpartisan,Table 1,pipeline,2
+table_1_county_legislator_n_partisan,Table 1,pipeline,3
+table_1_county_legislator_pct_partisan,Table 1,pipeline,1
+table_1_state_legislator_n_nonpartisan,Table 1,pipeline,37
+table_1_state_legislator_pct_nonpartisan,Table 1,pipeline,5
+table_1_state_legislator_n_partisan,Table 1,pipeline,18
+table_1_state_legislator_pct_partisan,Table 1,pipeline,8
+table_1_us_legislator_n_nonpartisan,Table 1,pipeline,5
+table_1_us_legislator_pct_nonpartisan,Table 1,pipeline,1
+table_1_us_legislator_n_partisan,Table 1,pipeline,4
+table_1_us_legislator_pct_partisan,Table 1,pipeline,2
+table_1_mayor_n_nonpartisan,Table 1,pipeline,338
+table_1_mayor_pct_nonpartisan,Table 1,pipeline,44
+table_1_mayor_n_partisan,Table 1,pipeline,102
+table_1_mayor_pct_partisan,Table 1,pipeline,43
+table_1_total_n_nonpartisan,Table 1,pipeline,772
+table_1_total_pct_nonpartisan,Table 1,pipeline,100
+table_1_total_n_partisan,Table 1,pipeline,238
+table_1_total_pct_partisan,Table 1,pipeline,100
+table_1_chisq_statistic,Table 1,pipeline,21.2
+table_1_chisq_p_value,Table 1,pipeline,0.002
+desc_chisq_significant,"Observational evidence, p. 6",descriptive,
+obs_partisan_no_experience_pct,"Observational evidence, p. 6",pipeline,30
+obs_experience_gap_pp,"Observational evidence, p. 6",pipeline,9
+obs_nonpartisan_no_experience_pct,"Observational evidence, p. 6",pipeline,21
+obs_experience_gap_pp_restated,"Observational evidence, p. 6",pipeline,9
+obs_partisan_attorney_exec_pct,"Observational evidence, p. 6",pipeline,63
+obs_nonpartisan_attorney_exec_pct,"Observational evidence, p. 6",pipeline,48
+desc_nonpartisan_winners_more_experienced,"Observational evidence, p. 6",descriptive,
+obs_n_contested_elections,"Observational evidence, p. 6",pipeline,779
+obs_partisan_more_experienced_wins_pct,"Observational evidence, p. 6",pipeline,62
+obs_nonpartisan_more_experienced_wins_pct,"Observational evidence, p. 6",pipeline,61
+obs_experience_advantage_p_value,"Observational evidence, p. 6",pipeline,0.791
+desc_experience_advantage_not_significant,"Observational evidence, p. 6",descriptive,
+design_elections_per_subject,"Conjoint Candidate Choice Survey Experiments, p. 7",structural,5
+design_attributes_nonpartisan,"Conjoint Candidate Choice Survey Experiments, p. 7",definitional,5
+design_attributes_partisan,"Conjoint Candidate Choice Survey Experiments, p. 7",definitional,6
+design_candidates_per_election,"Conjoint Candidate Choice Survey Experiments, p. 7",definitional,2
+design_attribute_limit_low,"Conjoint Candidate Choice Survey Experiments, p. 7",transcribed,6
+design_attribute_limit_high,"Conjoint Candidate Choice Survey Experiments, p. 7",transcribed,7
+table_2_age_35,Table 2,definitional,35
+table_2_age_45,Table 2,definitional,45
+table_2_age_55,Table 2,definitional,55
+table_2_age_65,Table 2,definitional,65
+analysis_competence_scale_min,"Analysis, p. 10",definitional,0
+analysis_competence_scale_max,"Analysis, p. 10",definitional,100
+analysis_coef_vector_length,"Analysis, p. 10",definitional,1
+analysis_ci_level,"Analysis, p. 11",definitional,95
+analysis_amce_decimal_agreement,"Analysis, footnote 5, p. 11",pipeline,
+analysis_logit_agreement,"Analysis, footnote 5, p. 11",pipeline,
+desc_strongest_effects_pol_experience,"Results: Figure 3, p. 12",descriptive,
+results_pol_exp_range_low,"Results: Figure 3, p. 12",pipeline,25
+results_pol_exp_range_high,"Results: Figure 3, p. 12",pipeline,30
+desc_mayor_rewarded_most,"Results: Figure 3, p. 12",descriptive,
+desc_muted_job_race_age_gender,"Results: Figure 3, p. 12",descriptive,
+desc_prefer_female_and_nonwhite,"Results: Figure 3, p. 12",descriptive,
+desc_age_nonmonotonic,"Results: Figure 3, p. 12",descriptive,
+desc_partisan_pol_exp_more_muted,"Results: Figure 3, p. 12",descriptive,
+desc_prefers_independents,"Results: Figure 3, p. 12",descriptive,
+desc_difference_null_job_race_age_gender,"Results: Figure 3, p. 12",descriptive,
+desc_difference_significant_pol_experience,"Results: Figure 3, p. 12",descriptive,
+results_pol_exp_gap_pp,"Results: Figure 3, p. 12",pipeline,10
+desc_yougov_similar_pattern,"Results: Figure 4, p. 12",descriptive,
+desc_school_board_ordering,"Results: Figure 4, p. 12",descriptive,
+desc_yougov_pol_exp_interaction,"Results: Figure 4, p. 12",descriptive,
+desc_stayathome_electrician_negative,"Results: Figure 4, p. 12",descriptive,
+desc_yougov_small_gender_age,"Results: Figure 4, p. 12",descriptive,
+desc_mturk_sample_differences,"Conjoint Candidate Choice Survey Experiments, p. 9",descriptive,
+desc_partisans_dislike_outparty_candidates,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_dislike_outparty_more_than_like_inparty,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_race_preference_by_respondent_party,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_republicans_no_gender_preference,"Results: Figures 5 and 6, p. 15",descriptive,
+results_democrats_female_preference_pp,"Results: Figures 5 and 6, p. 15",pipeline,10
+desc_race_gender_patterns_stable_across_election_type,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_both_parties_reward_experience,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_prediction_only_among_democrats,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_clearest_in_mturk,"Results: Figures 5 and 6, p. 15",descriptive,
+desc_yougov_republicans_occupation_democrats_political,"Results: Figures 5 and 6, p. 15",descriptive,
+mechanism_competence_scale_min,"Mechanism: Candidate Competence, p. 15",definitional,0
+mechanism_competence_scale_max,"Mechanism: Candidate Competence, p. 15",definitional,100
+desc_both_parties_competence_experience,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_democrats_competence_gap_nonpartisan,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_small_race_gender_age_competence,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_republicans_white_more_competent,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_occupation_competence_by_party,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_stayathome_not_more_competent,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_competent_types_elected_nonpartisan,"Mechanism: Figures 7 and 8, p. 17",descriptive,
+desc_policy_index_business_conservative,"Mechanism: Candidate Competence, p. 17",descriptive,
+desc_policy_index_democrats_experience,"Mechanism: Candidate Competence, p. 17",descriptive,
+mechanism_attributes_nonpartisan,"Mechanism: Candidate Competence, p. 17",definitional,5
+mechanism_attributes_partisan,"Mechanism: Candidate Competence, p. 17",definitional,6
+desc_satisficing_mturk_same_party,"Mechanism: Candidate Competence, p. 18",descriptive,
+desc_pol_exp_effect_larger_nonpartisan,"Discussion, p. 18",descriptive,
+discussion_correlation,"Discussion, p. 19",pipeline,0.95
+appendix_title_year_first,Appendix title page,structural,1945
+appendix_title_year_last,Appendix title page,structural,2007
+appendix_date,Appendix title page,structural,"June 23, 2016"
+table_a1_race_mturk_white,Table A.1,pipeline,0.787
+table_a1_race_mturk_black,Table A.1,pipeline,0.066
+table_a1_race_mturk_hispanic,Table A.1,pipeline,0.045
+table_a1_race_mturk_other,Table A.1,pipeline,0.102
+table_a1_race_yougov_white,Table A.1,pipeline,0.670
+table_a1_race_yougov_black,Table A.1,pipeline,0.116
+table_a1_race_yougov_hispanic,Table A.1,pipeline,0.142
+table_a1_race_yougov_other,Table A.1,pipeline,0.071
+table_a1_gender_mturk_female,Table A.1,pipeline,0.455
+table_a1_gender_mturk_male,Table A.1,pipeline,0.545
+table_a1_gender_yougov_female,Table A.1,pipeline,0.518
+table_a1_gender_yougov_male,Table A.1,pipeline,0.482
+table_a1_ideology_mturk_liberal,Table A.1,pipeline,0.444
+table_a1_ideology_mturk_conservative,Table A.1,pipeline,0.232
+table_a1_ideology_mturk_moderate,Table A.1,pipeline,0.273
+table_a1_ideology_mturk_other,Table A.1,pipeline,0.051
+table_a1_ideology_yougov_liberal,Table A.1,pipeline,0.204
+table_a1_ideology_yougov_conservative,Table A.1,pipeline,0.354
+table_a1_ideology_yougov_moderate,Table A.1,pipeline,0.351
+table_a1_ideology_yougov_other,Table A.1,pipeline,0.091
+table_a1_party_mturk_democrat,Table A.1,pipeline,0.581
+table_a1_party_mturk_independent,Table A.1,pipeline,0.164
+table_a1_party_mturk_republican,Table A.1,pipeline,0.254
+table_a1_party_yougov_democrat,Table A.1,pipeline,0.385
+table_a1_party_yougov_independent,Table A.1,pipeline,0.270
+table_a1_party_yougov_republican,Table A.1,pipeline,0.346
+table_a1_education_mturk_less_than_high_school,Table A.1,pipeline,0.005
+table_a1_education_mturk_high_school,Table A.1,pipeline,0.092
+table_a1_education_mturk_some_college,Table A.1,pipeline,0.359
+table_a1_education_mturk_four_year_college,Table A.1,pipeline,0.403
+table_a1_education_mturk_graduate_school,Table A.1,pipeline,0.141
+table_a1_education_yougov_less_than_high_school,Table A.1,pipeline,0.121
+table_a1_education_yougov_high_school,Table A.1,pipeline,0.306
+table_a1_education_yougov_some_college,Table A.1,pipeline,0.318
+table_a1_education_yougov_four_year_college,Table A.1,pipeline,0.164
+table_a1_education_yougov_graduate_school,Table A.1,pipeline,0.091
+table_a1_age_mturk_18_to_29,Table A.1,pipeline,0.459
+table_a1_age_mturk_30_to_39,Table A.1,pipeline,0.274
+table_a1_age_mturk_40_to_49,Table A.1,pipeline,0.122
+table_a1_age_mturk_50_to_59,Table A.1,pipeline,0.093
+table_a1_age_mturk_60_or_over,Table A.1,pipeline,0.051
+table_a1_age_yougov_18_to_29,Table A.1,pipeline,0.209
+table_a1_age_yougov_30_to_39,Table A.1,pipeline,0.163
+table_a1_age_yougov_40_to_49,Table A.1,pipeline,0.150
+table_a1_age_yougov_50_to_59,Table A.1,pipeline,0.149
+table_a1_age_yougov_60_or_over,Table A.1,pipeline,0.328
+table_a1_age_band_18,Table A.1,definitional,18 to 29
+table_a1_age_band_30,Table A.1,definitional,30 to 39
+table_a1_age_band_40,Table A.1,definitional,40 to 49
+table_a1_age_band_50,Table A.1,definitional,50 to 59
+table_a1_age_band_60,Table A.1,definitional,60 or over
+table_a1_n_mturk,Table A.1,pipeline,"1,204"
+table_a1_n_yougov,Table A.1,pipeline,"1,200"
+appendix_b_attributes_nonpartisan,Appendix B,definitional,5
+appendix_b_attributes_partisan,Appendix B,definitional,6
+desc_appendix_b_mturk_significant_interaction,Appendix B,descriptive,
+desc_appendix_b_yougov_no_variation,Appendix B,descriptive,
+appendix_c_competence_scale_min,Appendix C,definitional,0
+appendix_c_competence_scale_max,Appendix C,definitional,100
+appendix_c3_analogous_figure,Appendix C,structural,1
+appendix_c4_analogous_figure,Appendix C,structural,2
+desc_appendix_c_results_similar,Appendix C,descriptive,

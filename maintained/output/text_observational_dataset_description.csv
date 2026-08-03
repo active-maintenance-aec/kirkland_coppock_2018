@@ -1,0 +1,2 @@
+n_elections,n_candidates,n_municipalities,year_first,year_last,n_variables,variables
+1010,2020,237,1945,2007,12,fipsid; year; partisan; win; incumbent; mayor; council; county_elect; state_elect; us_elect; contest_id; experience_recoded

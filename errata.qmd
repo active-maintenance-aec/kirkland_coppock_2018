@@ -1,0 +1,76 @@
+---
+title: "Errata"
+subtitle: "On Kirkland and Coppock (2018), *Political Behavior* 40(3)"
+format:
+  pdf:
+    output-file: kirkland_coppock_2018_errata.pdf
+    geometry: margin=1.25in
+    fontsize: 11pt
+    include-in-header:
+      text: |
+        \usepackage{caption}
+        \captionsetup{labelformat=empty}
+        \usepackage{float}
+        \floatplacement{table}{H}
+        \floatplacement{figure}{H}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(here)
+library(tidyverse)
+here::i_am("errata.qmd")
+
+out <- function(f) read_csv(here("maintained", "output", f), show_col_types = FALSE)
+
+advantage <- out("text_observational_experience_advantage.csv")
+dataset <- out("text_observational_dataset_description.csv")
+figure_3_np <- out("figure_3_mturk_main_candidate_pref.csv") |>
+  filter(panel == "Nonpartisan", !is.na(estimate))
+pol_np <- filter(figure_3_np, coef_group == "Pol. Experience")
+largest_other <- max(abs(figure_3_np$estimate[figure_3_np$coef_group != "Pol. Experience"]))
+```
+
+This note lists four misstated numbers in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** Each is recorded because a reader who quoted the sentence would be quoting a number the article's own data do not support.
+
+All four are in the two paragraphs that introduce the observational and experimental evidence. Every corrected value below is computed from the data at the time this document is rendered: the conjoint estimates from the deposited replication archive ([10.7910/DVN/WSUHI3](https://doi.org/10.7910/DVN/WSUHI3)), and the mayoral election data from the file the authors supplied, which the deposit omits. The code supporting each correction is at [github.com/active-maintenance-aec/kirkland_coppock_2018](https://github.com/active-maintenance-aec/kirkland_coppock_2018).
+
+## 1. The two ballot types are transposed in the experience-advantage comparison
+
+> Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about **62%** of the time in **partisan** elections and **61%** of the time in **nonpartisan** elections.
+
+Corrected:
+
+> Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about **`r sprintf("%.0f", advantage$pct_nonpartisan)`%** of the time in **nonpartisan** elections and **`r sprintf("%.0f", advantage$pct_partisan)`%** of the time in **partisan** elections.
+
+Both percentages are right and the labels attached to them are the wrong way round. The data give `r sprintf("%.1f", advantage$pct_nonpartisan)` per cent in nonpartisan elections and `r sprintf("%.1f", advantage$pct_partisan)` per cent in partisan elections, across the `r advantage$n_elections_total` elections the sentence identifies. The direction matters here, because the article's own argument is that nonpartisan ballots favour the more experienced candidate: the published sentence reports the gap running the other way.
+
+## 2. The p-value on that comparison reproduces under no test
+
+> This difference is not statistically significant (p = **0.791**).
+
+Corrected:
+
+> This difference is not statistically significant (p = **`r sprintf("%.3f", advantage$p_value_hc2)`**).
+
+The corrected figure is a regression of the more-experienced-candidate-wins indicator on ballot type with HC2 standard errors. A chi-squared test of the same two-by-two table gives `r sprintf("%.3f", advantage$p_value_chisq)`, and no standard test of this comparison returns 0.791. The conclusion the sentence draws is unaffected: the difference of `r sprintf("%.1f", advantage$difference_pp)` percentage points is not distinguishable from zero on any of them.
+
+## 3. The number of municipalities in the mayoral election dataset
+
+> This dataset covers **225** unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.
+
+Corrected:
+
+> This dataset covers **`r dataset$n_municipalities`** unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.
+
+The file carries `r dataset$n_municipalities` distinct FIPS place codes across its `r dataset$n_elections` elections, and it is the file the sentence describes: the election count and the `r dataset$year_first` to `r dataset$year_last` span both reproduce exactly. No other reading of it returns 225 either, since municipalities holding more than one election number 171, the subset used later in the paragraph covers 216, and truncating the place code to five digits gives 213.
+
+## 4. The range of political experience effects is stated more tightly than the estimates support
+
+> Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of **25--30** percentage points.
+
+Corrected:
+
+> Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of **`r sprintf("%.0f", 100 * min(pol_np$estimate))`--`r sprintf("%.0f", 100 * max(pol_np$estimate))`** percentage points.
+
+The published range is wrong at both ends rather than at one. The four estimates in the nonpartisan column of Figure 3 are `r paste0(pol_np$label, " ", sprintf("%.1f", 100 * pol_np$estimate), collapse = ", ")` percentage points. The claim the sentence makes is unaffected: political experience remains by a wide margin the most consequential attribute in the figure, and the next largest effect of any kind is `r sprintf("%.1f", 100 * largest_other)` percentage points.

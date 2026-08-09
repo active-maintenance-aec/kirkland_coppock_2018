@@ -8,6 +8,8 @@ library(here)
 library(tidyverse)
 library(estimatr)
 
+here::i_am("maintained/helpers.R")
+
 # Deposited data ----
 # yougov_replication.xlsx is the name the file carries in the deposit. Despite the
 # extension it is an RData binary, and load() reads it correctly. download_original.R
@@ -231,4 +233,19 @@ save_figure <- function(g, plot_df, stem, width, height) {
   ggsave(out("pdf"), plot = g, width = width, height = height)
   ggsave(out("png"), plot = g, width = width, height = height, dpi = 300)
   write_csv(plot_df, out("csv"))
+}
+
+# Blank a figure PDF's embedded timestamps ----
+# R's pdf() device stamps /CreationDate and /ModDate with the wall clock, so an
+# otherwise deterministic pipeline writes a different file on every run. The epoch
+# string is the same width as what it replaces, which keeps the cross-reference byte
+# offsets valid, and a file with no timestamp is left alone.
+blank_pdf_timestamps <- function(path) {
+  epoch <- charToRaw("D:19700101000000")
+  raw_pdf <- readBin(path, "raw", file.size(path))
+  hits <- grepRaw("D:[0-9]{14}", raw_pdf, all = TRUE)
+  if (length(hits) == 0) return(invisible(path))
+  for (h in hits) raw_pdf[h:(h + length(epoch) - 1L)] <- epoch
+  writeBin(raw_pdf, path)
+  invisible(path)
 }

@@ -182,7 +182,16 @@ entries <- tribble(
     "{paste0(pol_np$label, ' ', sprintf('%.1f', 100 * pol_np$estimate), collapse = ', ')} ",
     "percentage points. The claim the sentence makes is unaffected: political experience ",
     "remains by a wide margin the most consequential attribute in the figure, and the next ",
-    "largest effect of any kind is {sprintf('%.1f', 100 * largest_other)} percentage points.")
+    "largest effect of any kind is {sprintf('%.1f', 100 * largest_other)} percentage points."),
+
+  7, "bibliographic", "reference_audit", "brief",
+  "Oliver, Ha and Callen (2012) is missing its third author",
+  "published references, p. 590",
+  "[[Oliver, J. E., & Ha, S. E.]] (2012). Local Elections and the Politics of Small-Scale Democracy. Princeton: Princeton University Press.",
+  "Oliver, J. E., Ha, S. E., & Callen, Z. (2012). Local Elections and the Politics of Small-Scale Democracy. Princeton: Princeton University Press.",
+  paste("The book has three authors. Crossref, doi 10.23943/princeton/9780691143552.001.0001:",
+        "Oliver, J. Eric; Ha, Shang E.; Callen, Zachary. The article's own in-text citation on",
+        "p. 588 reads \"Oliver et al. 2012\", which the two-author entry cannot support.")
 ) |>
   mutate(across(c(title, published, corrected, note), as.character))
 
@@ -192,9 +201,9 @@ stopifnot(nrow(entries) == max(entries$entry), !anyDuplicated(entries$entry))
 bold <- function(x) str_replace_all(x, "\\[\\[(.*?)\\]\\]", "**\\1**")
 ```
 
-This note lists `r spelled(nrow(entries))` errors in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** `r str_to_sentence(spelled(sum(entries$class != "definition")))` are misstated numbers and `r spelled(sum(entries$class == "definition"))` are descriptions of the figures that the estimates behind those figures do not support. Each is recorded because a reader who quoted the sentence would be quoting something the article's own data do not bear out.
+This note lists `r spelled(nrow(entries))` errors in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** `r str_to_sentence(spelled(sum(entries$class %in% c("label", "quantity"))))` are misstated numbers, `r spelled(sum(entries$class == "definition"))` are descriptions of the figures that the estimates behind those figures do not support, and `r spelled(sum(entries$class == "bibliographic"))` is an author missing from a reference-list entry. Each is recorded because a reader who quoted the article would be quoting something the record does not bear out.
 
-Every corrected value below is computed from the data at the time this document is rendered: the conjoint estimates from the deposited replication archive ([10.7910/DVN/WSUHI3](https://doi.org/10.7910/DVN/WSUHI3)), and the mayoral election data from the file the authors supplied, which the deposit omits. The code supporting each correction is at [github.com/active-maintenance-aec/kirkland_coppock_2018](https://github.com/active-maintenance-aec/kirkland_coppock_2018).
+Every corrected value in entries 1 to `r max(entries$entry[entries$class != "bibliographic"])` is computed from the data at the time this document is rendered: the conjoint estimates from the deposited replication archive ([10.7910/DVN/WSUHI3](https://doi.org/10.7910/DVN/WSUHI3)), and the mayoral election data from the file the authors supplied, which the deposit omits. The reference-list entry is verified against the authoritative record at Crossref, named in the entry. The code supporting each correction is at [github.com/active-maintenance-aec/kirkland_coppock_2018](https://github.com/active-maintenance-aec/kirkland_coppock_2018).
 
 ```{r emit-entries, results="asis"}
 # A heading is only a heading when a blank line precedes it, so each entry opens with one.

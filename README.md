@@ -215,9 +215,10 @@ sample nor an election type.
 **The article contradicts its own data on 8 claims.** Six are misstated
 numbers and two are descriptions of the heterogeneous-effects figures
 that the estimates behind those figures do not support. All eight are
-set out in `kirkland_coppock_2018_errata.pdf`, which carries 6 entries
-rather than eight: two of its entries correct a pair of numbers stated
-in a single sentence.
+set out in `kirkland_coppock_2018_errata.pdf`, which carries 7 entries:
+two of them each correct a pair of numbers stated in a single sentence,
+and the last corrects a reference-list entry rather than a claim about
+the data.
 
 **The p-value that does not reproduce.** The paper reports that among
 the 779 elections in which the two candidates had different levels of
@@ -321,12 +322,13 @@ alongside a later draft of the paper.
 
 The rewrite corrects no analytical error in the deposited code, because
 none of the discrepancies above is one. What the comparison does turn up
-is 6 sentences in the article that its own data do not bear out. They
-are set out in `errata.qmd`, which renders to
+is 6 sentences in the article that its own data do not bear out, and a
+separate audit of the reference list against Crossref adds 1. They are
+set out in `errata.qmd`, which renders to
 `kirkland_coppock_2018_errata.pdf` at the repository root, ordered by
-severity. Every corrected value in that note is computed at render time
-from `maintained/output/`, so it cannot go stale in the way the article
-did. None of the six changes a conclusion.
+severity. Every corrected value in that note that comes from the data is
+computed at render time from `maintained/output/`, so it cannot go stale
+in the way the article did. None of the seven changes a conclusion.
 
 **Four are misstated numbers.** The two ballot types are transposed in
 the experience-advantage comparison, so the sentence reports the gap
@@ -352,6 +354,16 @@ evidence.
   reads the difference column of Figure 7 as null for Republicans. Two
   of the four Democratic intervals exclude zero, and so does one of the
   four Republican ones, for candidates who have been mayor.
+
+**One is a reference-list entry missing an author.** A sweep of all 55
+printed references against Crossref flagged one entry, and it is real:
+*Local Elections and the Politics of Small-Scale Democracy* is by
+Oliver, Ha and Callen, and the entry gives only the first two. The
+article’s own in-text citation reads “Oliver et al. 2012”, so the
+reference list contradicts the text that points at it. Nothing in the
+deposit bears on this, and the corrected entry is verified against the
+record at `10.23943/princeton/9780691143552.001.0001` rather than
+computed.
 
 **One claim the article’s data cannot judge either way is deliberately
 not in the note.** “Democrats are 10 percentage points more likely to

@@ -58,8 +58,11 @@ appendix. `maintained/in_text_claims.R` prints each of those numbers
 beside the sentence that states it. `original/` is created by the
 download script and is deliberately absent from the repository.
 `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note
-listing the article’s misstated numbers. This README is the
-reproducibility report, also available as a PDF in `report/`.
+listing the article’s misstated numbers, and writes
+`errata_entries.csv`, the one place each correction is written down,
+which this report counts from rather than keeping its own tally. This
+README is the reproducibility report, also available as a PDF in
+`report/`.
 
 **License.** CC0 1.0 Universal, matching the terms of the deposit this
 repository maintains, so nothing in the chain is more restrictive than
@@ -212,7 +215,9 @@ sample nor an election type.
 **The article contradicts its own data on 8 claims.** Six are misstated
 numbers and two are descriptions of the heterogeneous-effects figures
 that the estimates behind those figures do not support. All eight are
-set out as the 6 entries of `kirkland_coppock_2018_errata.pdf`.
+set out in `kirkland_coppock_2018_errata.pdf`, which carries 6 entries
+rather than eight: two of its entries correct a pair of numbers stated
+in a single sentence.
 
 **The p-value that does not reproduce.** The paper reports that among
 the 779 elections in which the two candidates had different levels of

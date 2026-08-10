@@ -59,68 +59,146 @@ clears <- function(party_label) {
 
 n_per_party <- sum(competence_diff$party == "Democrats")
 republican_mayor <- filter(competence_diff, party == "Republicans", label == "Mayor")
+
+# The prose below spells small counts out, so the counts derived from the spine are
+# spelled out too rather than printed as digits.
+spelled <- function(n) {
+  words <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+  if_else(n >= 1 & n <= 10, words[n], as.character(n))
+}
 ```
 
-This note lists six errors in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** Four are misstated numbers and two are descriptions of the figures that the estimates behind those figures do not support. Each is recorded because a reader who quoted the sentence would be quoting something the article's own data do not bear out.
+```{r entries}
+# THE ERRATA SPINE. Every entry is defined once, here, and the document below is rendered
+# from it. The same rows are written out as errata_entries.csv at the foot of this file, so
+# anything else that needs the corrections (the README's count, a remastered edition) reads
+# them rather than keeping a hand-typed copy that can drift out of agreement with this one.
+#
+# Every corrected value is computed at render time from maintained/output/. A number is
+# never typed into a corrected field: str_glue() keeps the pipeline in the loop, which is
+# the whole reason this note cannot go stale in the way the article did.
+#
+# [[...]] marks the span that changes, and is the only markup in the published and corrected
+# fields. Each renderer resolves it its own way: bold here, a macro in a later edition.
+#
+# Numbering is the published note's and is APPEND-ONLY: an entry can already have been cited
+# by number, so a later finding is added at the end and never interleaved, renumbered,
+# merged or split.
+entries <- tribble(
+  ~entry, ~class, ~source, ~form, ~title, ~location, ~published, ~corrected, ~note,
+
+  1, "label", "pipeline", "full",
+  "The two ballot types are transposed in the experience-advantage comparison",
+  "",
+  "Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about [[62%]] of the time in [[partisan]] elections and [[61%]] of the time in [[nonpartisan]] elections.",
+  str_glue("Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about [[{sprintf('%.0f', advantage$pct_nonpartisan)}%]] of the time in [[nonpartisan]] elections and [[{sprintf('%.0f', advantage$pct_partisan)}%]] of the time in [[partisan]] elections."),
+  str_glue(
+    "Both percentages are right and the labels attached to them are the wrong way round. ",
+    "The data give {sprintf('%.1f', advantage$pct_nonpartisan)} per cent in nonpartisan ",
+    "elections and {sprintf('%.1f', advantage$pct_partisan)} per cent in partisan ",
+    "elections, across the {advantage$n_elections_total} elections the sentence identifies. ",
+    "The direction matters here, because the article's own argument is that nonpartisan ",
+    "ballots favour the more experienced candidate: the published sentence reports the gap ",
+    "running the other way."),
+
+  2, "definition", "pipeline", "full",
+  "The racial preference pattern holds in one sample and not the other",
+  "",
+  "Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates.",
+  "Republican respondents marginally prefer white candidates [[in the YouGov sample]], while Democrats marginally prefer nonwhite candidates [[in both]].",
+  str_glue(
+    "The Democratic half of the sentence holds everywhere: all six estimates are positive, ",
+    "{race_list('Mechanical Turk', 'Democrats')} percentage points on Mechanical Turk and ",
+    "{race_list('YouGov', 'Democrats')} on YouGov, the last of those being ",
+    "{sprintf('%+.3f', race_pp('YouGov', 'Democrats', 'Hispanic'))} rather than a true ",
+    "zero. The Republican half holds only on YouGov, where the three estimates are ",
+    "{race_list('YouGov', 'Republicans')}. On Mechanical Turk, Republican respondents ",
+    "prefer **Asian** candidates to white candidates by ",
+    "{sprintf('%.1f', race_pp('Mechanical Turk', 'Republicans', 'Asian'))} percentage ",
+    "points, while preferring white candidates to Black ones by ",
+    "{sprintf('%.1f', -race_pp('Mechanical Turk', 'Republicans', 'Black'))} and to Hispanic ",
+    "ones by {sprintf('%.1f', -race_pp('Mechanical Turk', 'Republicans', 'Hispanic'))}. ",
+    "A reader taking the sentence as a general finding about Republican respondents would ",
+    "be taking a pattern that reverses on one of the paper's two samples."),
+
+  3, "definition", "pipeline", "full",
+  "Republican respondents do show a competence gap by election type",
+  "",
+  "As shown in the difference column, Democratic respondents ([[but not Republican respondents]]) rate such candidates as even more competent in the absence of party labels.",
+  "As shown in the difference column, Democratic respondents ([[and, for candidates who have been mayor, Republican respondents]]) rate such candidates as even more competent in the absence of party labels.",
+  str_glue(
+    "The parenthetical reads the Republican half of Figure 7's difference column as null, ",
+    "and one of its four estimates is not. {clears('Democrats')} of the {n_per_party} ",
+    "Democratic intervals exclude zero and so does {clears('Republicans')} of the ",
+    "{n_per_party} Republican ones: Republican respondents rate a candidate who has been ",
+    "mayor {sprintf('%.2f', republican_mayor$estimate)} points more competent in ",
+    "nonpartisan than in partisan elections, with a 95 per cent interval of ",
+    "{sprintf('%.2f', republican_mayor$conf.low)} to ",
+    "{sprintf('%.2f', republican_mayor$conf.high)}. The contrast the sentence draws is one ",
+    "of degree rather than of presence."),
+
+  4, "quantity", "pipeline", "full",
+  "The p-value on the experience-advantage comparison reproduces under no test",
+  "",
+  "This difference is not statistically significant (p = [[0.791]]).",
+  str_glue("This difference is not statistically significant (p = [[{sprintf('%.3f', advantage$p_value_hc2)}]])."),
+  str_glue(
+    "The corrected figure is a regression of the more-experienced-candidate-wins indicator ",
+    "on ballot type with HC2 standard errors. A chi-squared test of the same two-by-two ",
+    "table gives {sprintf('%.3f', advantage$p_value_chisq)}, and no standard test of this ",
+    "comparison returns 0.791. The conclusion the sentence draws is unaffected: the ",
+    "difference of {sprintf('%.1f', advantage$difference_pp)} percentage points is not ",
+    "distinguishable from zero on any of them."),
+
+  5, "quantity", "pipeline", "full",
+  "The number of municipalities in the mayoral election dataset",
+  "",
+  "This dataset covers [[225]] unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.",
+  str_glue("This dataset covers [[{dataset$n_municipalities}]] unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes."),
+  str_glue(
+    "The file carries {dataset$n_municipalities} distinct FIPS place codes across its ",
+    "{dataset$n_elections} elections, and it is the file the sentence describes: the ",
+    "election count and the {dataset$year_first} to {dataset$year_last} span both reproduce ",
+    "exactly. No other reading of it returns 225 either, since municipalities holding more ",
+    "than one election number 171, the subset used later in the paragraph covers 216, and ",
+    "truncating the place code to five digits gives 213."),
+
+  6, "quantity", "pipeline", "full",
+  "The range of political experience effects is stated more tightly than the estimates support",
+  "",
+  "Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of [[25--30]] percentage points.",
+  str_glue("Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of [[{sprintf('%.0f', 100 * min(pol_np$estimate))}--{sprintf('%.0f', 100 * max(pol_np$estimate))}]] percentage points."),
+  str_glue(
+    "The published range is wrong at both ends rather than at one. The four estimates in ",
+    "the nonpartisan column of Figure 3 are ",
+    "{paste0(pol_np$label, ' ', sprintf('%.1f', 100 * pol_np$estimate), collapse = ', ')} ",
+    "percentage points. The claim the sentence makes is unaffected: political experience ",
+    "remains by a wide margin the most consequential attribute in the figure, and the next ",
+    "largest effect of any kind is {sprintf('%.1f', 100 * largest_other)} percentage points.")
+) |>
+  mutate(across(c(title, published, corrected, note), as.character))
+
+stopifnot(nrow(entries) == max(entries$entry), !anyDuplicated(entries$entry))
+
+# The spine's markup, resolved for this document.
+bold <- function(x) str_replace_all(x, "\\[\\[(.*?)\\]\\]", "**\\1**")
+```
+
+This note lists `r spelled(nrow(entries))` errors in "Candidate Choice Without Party Labels: New Insights from Conjoint Survey Experiments," published in *Political Behavior* 40(3), doi [10.1007/s11109-017-9414-8](https://doi.org/10.1007/s11109-017-9414-8). **None of them changes a conclusion of the article.** `r str_to_sentence(spelled(sum(entries$class != "definition")))` are misstated numbers and `r spelled(sum(entries$class == "definition"))` are descriptions of the figures that the estimates behind those figures do not support. Each is recorded because a reader who quoted the sentence would be quoting something the article's own data do not bear out.
 
 Every corrected value below is computed from the data at the time this document is rendered: the conjoint estimates from the deposited replication archive ([10.7910/DVN/WSUHI3](https://doi.org/10.7910/DVN/WSUHI3)), and the mayoral election data from the file the authors supplied, which the deposit omits. The code supporting each correction is at [github.com/active-maintenance-aec/kirkland_coppock_2018](https://github.com/active-maintenance-aec/kirkland_coppock_2018).
 
-## 1. The two ballot types are transposed in the experience-advantage comparison
+```{r emit-entries, results="asis"}
+# A heading is only a heading when a blank line precedes it, so each entry opens with one.
+walk(seq_len(nrow(entries)), function(i) {
+  e <- entries[i, ]
+  cat("\n\n## ", e$entry, ". ", e$title, "\n\n> ", bold(e$published), "\n\nCorrected:\n\n> ",
+      bold(e$corrected), "\n\n", e$note, "\n", sep = "")
+})
+```
 
-> Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about **62%** of the time in **partisan** elections and **61%** of the time in **nonpartisan** elections.
-
-Corrected:
-
-> Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about **`r sprintf("%.0f", advantage$pct_nonpartisan)`%** of the time in **nonpartisan** elections and **`r sprintf("%.0f", advantage$pct_partisan)`%** of the time in **partisan** elections.
-
-Both percentages are right and the labels attached to them are the wrong way round. The data give `r sprintf("%.1f", advantage$pct_nonpartisan)` per cent in nonpartisan elections and `r sprintf("%.1f", advantage$pct_partisan)` per cent in partisan elections, across the `r advantage$n_elections_total` elections the sentence identifies. The direction matters here, because the article's own argument is that nonpartisan ballots favour the more experienced candidate: the published sentence reports the gap running the other way.
-
-## 2. The racial preference pattern holds in one sample and not the other
-
-> Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates.
-
-Corrected:
-
-> Republican respondents marginally prefer white candidates **in the YouGov sample**, while Democrats marginally prefer nonwhite candidates **in both**.
-
-The Democratic half of the sentence holds everywhere: all six estimates are positive, `r race_list("Mechanical Turk", "Democrats")` percentage points on Mechanical Turk and `r race_list("YouGov", "Democrats")` on YouGov, the last of those being `r sprintf("%+.3f", race_pp("YouGov", "Democrats", "Hispanic"))` rather than a true zero. The Republican half holds only on YouGov, where the three estimates are `r race_list("YouGov", "Republicans")`. On Mechanical Turk, Republican respondents prefer **Asian** candidates to white candidates by `r sprintf("%.1f", race_pp("Mechanical Turk", "Republicans", "Asian"))` percentage points, while preferring white candidates to Black ones by `r sprintf("%.1f", -race_pp("Mechanical Turk", "Republicans", "Black"))` and to Hispanic ones by `r sprintf("%.1f", -race_pp("Mechanical Turk", "Republicans", "Hispanic"))`. A reader taking the sentence as a general finding about Republican respondents would be taking a pattern that reverses on one of the paper's two samples.
-
-## 3. Republican respondents do show a competence gap by election type
-
-> As shown in the difference column, Democratic respondents (**but not Republican respondents**) rate such candidates as even more competent in the absence of party labels.
-
-Corrected:
-
-> As shown in the difference column, Democratic respondents (**and, for candidates who have been mayor, Republican respondents**) rate such candidates as even more competent in the absence of party labels.
-
-The parenthetical reads the Republican half of Figure 7's difference column as null, and one of its four estimates is not. `r clears("Democrats")` of the `r n_per_party` Democratic intervals exclude zero and so does `r clears("Republicans")` of the `r n_per_party` Republican ones: Republican respondents rate a candidate who has been mayor `r sprintf("%.2f", republican_mayor$estimate)` points more competent in nonpartisan than in partisan elections, with a 95 per cent interval of `r sprintf("%.2f", republican_mayor$conf.low)` to `r sprintf("%.2f", republican_mayor$conf.high)`. The contrast the sentence draws is one of degree rather than of presence.
-
-## 4. The p-value on the experience-advantage comparison reproduces under no test
-
-> This difference is not statistically significant (p = **0.791**).
-
-Corrected:
-
-> This difference is not statistically significant (p = **`r sprintf("%.3f", advantage$p_value_hc2)`**).
-
-The corrected figure is a regression of the more-experienced-candidate-wins indicator on ballot type with HC2 standard errors. A chi-squared test of the same two-by-two table gives `r sprintf("%.3f", advantage$p_value_chisq)`, and no standard test of this comparison returns 0.791. The conclusion the sentence draws is unaffected: the difference of `r sprintf("%.1f", advantage$difference_pp)` percentage points is not distinguishable from zero on any of them.
-
-## 5. The number of municipalities in the mayoral election dataset
-
-> This dataset covers **225** unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.
-
-Corrected:
-
-> This dataset covers **`r dataset$n_municipalities`** unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.
-
-The file carries `r dataset$n_municipalities` distinct FIPS place codes across its `r dataset$n_elections` elections, and it is the file the sentence describes: the election count and the `r dataset$year_first` to `r dataset$year_last` span both reproduce exactly. No other reading of it returns 225 either, since municipalities holding more than one election number 171, the subset used later in the paragraph covers 216, and truncating the place code to five digits gives 213.
-
-## 6. The range of political experience effects is stated more tightly than the estimates support
-
-> Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of **25--30** percentage points.
-
-Corrected:
-
-> Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of **`r sprintf("%.0f", 100 * min(pol_np$estimate))`--`r sprintf("%.0f", 100 * max(pol_np$estimate))`** percentage points.
-
-The published range is wrong at both ends rather than at one. The four estimates in the nonpartisan column of Figure 3 are `r paste0(pol_np$label, " ", sprintf("%.1f", 100 * pol_np$estimate), collapse = ", ")` percentage points. The claim the sentence makes is unaffected: political experience remains by a wide margin the most consequential attribute in the figure, and the next largest effect of any kind is `r sprintf("%.1f", 100 * largest_other)` percentage points.
+```{r emit-spine}
+# The machine-readable spine, written wherever this document is rendered. Anything else that
+# states these corrections or counts them reads this file rather than retyping them.
+write_csv(entries, here("errata_entries.csv"))
+```

@@ -58,7 +58,35 @@ n_descriptive_fail <- sum(gt$table_figure == "Descriptive" & gt$match_rewrite ==
 n_no_threshold <- sum(gt$table_figure == "Descriptive" & is.na(gt$match_rewrite) &
                         is.na(gt$defect_locus))
 n_a1_absent <- sum(str_starts(gt$claim_id, "table_a1_") & is.na(gt$match_rewrite))
-n_errata <- 6
+n_paper_internal_descriptive <- sum(gt$defect_locus == "paper_internal" &
+                                      gt$table_figure == "Descriptive", na.rm = TRUE)
+
+# The errata spine, written by errata.qmd. Every count of the corrections below reads it,
+# so the README and the note cannot come to disagree about how many there are.
+spine <- read_csv(here("errata_entries.csv"), show_col_types = FALSE)
+n_errata <- nrow(spine)
+n_errata_descriptive <- sum(spine$class == "definition")
+n_errata_numeric <- n_errata - n_errata_descriptive
+
+# The figure estimates the errata note quotes, read here from the same output files rather
+# than typed, so the account of the note below cannot go stale either.
+pol_np <- out("figure_3_mturk_main_candidate_pref.csv") |>
+  filter(panel == "Nonpartisan", coef_group == "Pol. Experience", !is.na(estimate))
+mturk_rep_asian <- out("figure_5_mturk_het_fx_candidate_pref.csv") |>
+  filter(panel == "Nonpartisan", coef_group == "Race", party == "Republicans",
+         label == "Asian")
+competence_diff <- out("figure_7_mturk_het_fx_competence.csv") |>
+  filter(panel == "Difference", coef_group == "Pol. Experience", !is.na(estimate)) |>
+  mutate(clears_zero = conf.low > 0 | conf.high < 0)
+n_per_party <- sum(competence_diff$party == "Democrats")
+n_clears_dem <- sum(competence_diff$clears_zero[competence_diff$party == "Democrats"])
+n_clears_rep <- sum(competence_diff$clears_zero[competence_diff$party == "Republicans"])
+
+# The prose below spells small counts out.
+spelled <- function(n) {
+  words <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+  if_else(n >= 1 & n <= 10, words[n], as.character(n))
+}
 
 fig_img <- function(stem) {
   here("maintained", "output",
@@ -80,7 +108,7 @@ This repository holds the actively maintained replication code for Kirkland and 
 
 **`recovered/` is different and is committed.** The observational analysis behind Table 1 depends on a data file and a script that the deposit does not contain, though its own README lists both. The authors supplied them, and since they exist nowhere else this repository carries them.
 
-**Repository layout.** `maintained/` is the maintained rewrite: one script per published table or figure, writing to `output/`, which is committed so a reader can compare a fresh run against it without downloading anything. `ground_truth/` ties every published number to the code that produces it, starting from `published_claims.csv`, an extraction of every numeric token in the article and the online appendix. `maintained/in_text_claims.R` prints each of those numbers beside the sentence that states it. `original/` is created by the download script and is deliberately absent from the repository. `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note listing the article's misstated numbers. This README is the reproducibility report, also available as a PDF in `report/`.
+**Repository layout.** `maintained/` is the maintained rewrite: one script per published table or figure, writing to `output/`, which is committed so a reader can compare a fresh run against it without downloading anything. `ground_truth/` ties every published number to the code that produces it, starting from `published_claims.csv`, an extraction of every numeric token in the article and the online appendix. `maintained/in_text_claims.R` prints each of those numbers beside the sentence that states it. `original/` is created by the download script and is deliberately absent from the repository. `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note listing the article's misstated numbers, and writes `errata_entries.csv`, the one place each correction is written down, which this report counts from rather than keeping its own tally. This README is the reproducibility report, also available as a PDF in `report/`.
 
 **License.** CC0 1.0 Universal, matching the terms of the deposit this repository maintains, so nothing in the chain is more restrictive than the archive itself. See `LICENSE`.
 
@@ -141,9 +169,12 @@ verdict_df <- tibble::tribble(
   "Table A.1 party identification panel and Ns",     "Reproduces exactly",
   "Table A.1 remaining panels",                      "Not verifiable; the deposit carries no other respondent demographics",
   "Figures 3 to 8, B.1, B.2, C.3, C.4",              "Reproduce; all 729 estimates and standard errors agree with the archive to 4e-13",
-  "Text on Figure 3, 25 to 30 percentage points",    "Range is tight at both ends; the estimates run 22.7 to 32.0",
+  "Text on Figure 3, 25 to 30 percentage points",    paste0("Range is tight at both ends; the estimates run ",
+                                                            sprintf("%.1f", 100 * min(pol_np$estimate)), " to ",
+                                                            sprintf("%.1f", 100 * max(pol_np$estimate))),
   "Text on Figure 3, about 10 percentage points",    "Reproduces (9.1 to 11.7)",
-  "Figures 5 and 6, Republicans prefer white candidates", "Holds on YouGov and not on MTurk, where Republicans prefer Asian candidates by 6.1 points",
+  "Figures 5 and 6, Republicans prefer white candidates", paste0("Holds on YouGov and not on MTurk, where Republicans prefer Asian candidates by ",
+                                                                sprintf("%.1f", 100 * mturk_rep_asian$estimate), " points"),
   "Figure 7, Republicans show no competence gap by election type", "Does not hold; the Republican estimate for Mayor excludes zero",
   "Discussion, correlation of 0.95",                 paste0("Reproduces (", sprintf("%.4f", pearson_archive), ") on the archive's specification")
 )
@@ -160,7 +191,7 @@ k
 
 Every numeric token in the article and the online appendix was extracted by hand into `ground_truth/published_claims.csv`, `r n_extracted` of them, and each classified. `r sum(published_claims$claim_type == "pipeline")` are quantities the pipeline should produce, `r sum(published_claims$claim_type == "descriptive")` are claims about shape, sign or ordering that need a computed truth value, and the rest are scale endpoints, category labels, and numbers copied from other papers. The ground truth carries `r n_claims` rows, one for every claim either instrument can reach; `r n_verifiable` of them can be evaluated and `r n_match` come out right. Of the `r n_claims - n_verifiable` that cannot, `r n_archive_locus` are quantities the deposit does not record at all, `r n_no_threshold` are descriptions whose wording sets no threshold to test against, and one is a sentence that names neither a sample nor an election type.
 
-**The article contradicts its own data on `r n_paper_internal` claims.** Six are misstated numbers and two are descriptions of the heterogeneous-effects figures that the estimates behind those figures do not support. All eight are set out as the `r n_errata` entries of `kirkland_coppock_2018_errata.pdf`.
+**The article contradicts its own data on `r n_paper_internal` claims.** `r str_to_sentence(spelled(n_paper_internal - n_paper_internal_descriptive))` are misstated numbers and `r spelled(n_paper_internal_descriptive)` are descriptions of the heterogeneous-effects figures that the estimates behind those figures do not support. All `r spelled(n_paper_internal)` are set out in `kirkland_coppock_2018_errata.pdf`, which carries `r n_errata` entries rather than `r spelled(n_paper_internal)`: two of its entries correct a pair of numbers stated in a single sentence.
 
 **The p-value that does not reproduce.** The paper reports that among the 779 elections in which the two candidates had different levels of political experience, the more experienced candidate won about 62 per cent of the time in partisan elections and 61 per cent in nonpartisan elections, and that "this difference is not statistically significant (p = 0.791)." The subset size reproduces exactly, and so do both percentages, though the sentence attaches them to the wrong ballot types: the data give `r sprintf("%.1f", adv$pct_nonpartisan)` per cent nonpartisan and `r sprintf("%.1f", adv$pct_partisan)` per cent partisan. The p-value does not reproduce under any standard test of that comparison. A regression with HC2 errors gives `r sprintf("%.3f", adv$p_value_hc2)`, a chi-squared test gives `r sprintf("%.3f", adv$p_value_chisq)`, and Fisher's exact test, a logit and a t test all land near 0.85. No deposited or recovered script computes this quantity, so there is no code to inspect. The stated conclusion, that the difference is not significant, is unaffected either way: 0.791 and 0.85 lead to the same reading.
 
@@ -216,14 +247,14 @@ k
 
 ## Errata
 
-The rewrite corrects no analytical error in the deposited code, because none of the discrepancies above is one. What the comparison does turn up is `r n_errata` sentences in the article that its own data do not bear out. They are set out in `errata.qmd`, which renders to `kirkland_coppock_2018_errata.pdf` at the repository root, ordered by severity. Every corrected value in that note is computed at render time from `maintained/output/`, so it cannot go stale in the way the article did. None of the six changes a conclusion.
+The rewrite corrects no analytical error in the deposited code, because none of the discrepancies above is one. What the comparison does turn up is `r n_errata` sentences in the article that its own data do not bear out. They are set out in `errata.qmd`, which renders to `kirkland_coppock_2018_errata.pdf` at the repository root, ordered by severity. Every corrected value in that note is computed at render time from `maintained/output/`, so it cannot go stale in the way the article did. None of the `r spelled(n_errata)` changes a conclusion.
 
-**Four are misstated numbers.** The two ballot types are transposed in the experience-advantage comparison, so the sentence reports the gap running against the paper's own argument. The p-value of 0.791 on that comparison reproduces under no test. The mayoral dataset covers `r dataset$n_municipalities` municipalities rather than 225. And the range of political experience effects in the sentence describing Figure 3 is wrong at both ends.
+**`r str_to_sentence(spelled(n_errata_numeric))` are misstated numbers.** The two ballot types are transposed in the experience-advantage comparison, so the sentence reports the gap running against the paper's own argument. The p-value of 0.791 on that comparison reproduces under no test. The mayoral dataset covers `r dataset$n_municipalities` municipalities rather than 225. And the range of political experience effects in the sentence describing Figure 3 is wrong at both ends.
 
-**Two are descriptions the estimates do not support.** A description a reader would quote misleads exactly as a number does, so these are entries in the note rather than observations about it; the corrected sentence says what the estimates support and the reason line carries the evidence.
+**`r str_to_sentence(spelled(n_errata_descriptive))` are descriptions the estimates do not support.** A description a reader would quote misleads exactly as a number does, so these are entries in the note rather than observations about it; the corrected sentence says what the estimates support and the reason line carries the evidence.
 
-- "Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates" holds in the YouGov sample, where all three Republican nonwhite estimates are negative. It reverses on MTurk, where Republican respondents prefer Asian candidates to white candidates by 6.1 percentage points while preferring white candidates to Black and Hispanic ones.
-- "Democratic respondents (but not Republican respondents) rate such candidates as even more competent in the absence of party labels" reads the difference column of Figure 7 as null for Republicans. Two of the four Democratic intervals exclude zero, and so does one of the four Republican ones, for candidates who have been mayor.
+- "Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates" holds in the YouGov sample, where all three Republican nonwhite estimates are negative. It reverses on MTurk, where Republican respondents prefer Asian candidates to white candidates by `r sprintf("%.1f", 100 * mturk_rep_asian$estimate)` percentage points while preferring white candidates to Black and Hispanic ones.
+- "Democratic respondents (but not Republican respondents) rate such candidates as even more competent in the absence of party labels" reads the difference column of Figure 7 as null for Republicans. `r str_to_sentence(spelled(n_clears_dem))` of the `r spelled(n_per_party)` Democratic intervals exclude zero, and so does `r spelled(n_clears_rep)` of the `r spelled(n_per_party)` Republican ones, for candidates who have been mayor.
 
 **One claim the article's data cannot judge either way is deliberately not in the note.** "Democrats are 10 percentage points more likely to choose a female candidate than a male candidate" names neither a sample nor an election type, and the four estimates it could be reporting run 3.4 to 11.1 percentage points. That is unjudgeable rather than wrong, and the ground truth records it as `unresolved`.
 

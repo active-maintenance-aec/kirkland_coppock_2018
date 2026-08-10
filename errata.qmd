@@ -79,7 +79,15 @@ spelled <- function(n) {
 # the whole reason this note cannot go stale in the way the article did.
 #
 # [[...]] marks the span that changes, and is the only markup in the published and corrected
-# fields. Each renderer resolves it its own way: bold here, a macro in a later edition.
+# fields. Each renderer resolves it its own way: bold here, a macro in a later edition. Entry 2
+# carries no marker in its published field: the correction there is a pure insertion of two
+# qualifying clauses, so no span of the published sentence is wrong to mark.
+#
+# `location` is where the sentence sits in the published article, taken verbatim from this
+# repo's own extraction, ground_truth/published_claims.csv, prefixed with "published " to match
+# the convention used across these notes. This document does not print it; it is carried for
+# the consumers that read errata_entries.csv, which is also why it must stay a character
+# column rather than an empty one that read_csv types as logical.
 #
 # Numbering is the published note's and is APPEND-ONLY: an entry can already have been cited
 # by number, so a later finding is added at the end and never interleaved, renumbered,
@@ -89,7 +97,7 @@ entries <- tribble(
 
   1, "label", "pipeline", "full",
   "The two ballot types are transposed in the experience-advantage comparison",
-  "",
+  "published Observational evidence, p. 6",
   "Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about [[62%]] of the time in [[partisan]] elections and [[61%]] of the time in [[nonpartisan]] elections.",
   str_glue("Subsetting our dataset to only those elections in which candidates have different levels of political experience (779 elections), we see that the candidate with more experience wins about [[{sprintf('%.0f', advantage$pct_nonpartisan)}%]] of the time in [[nonpartisan]] elections and [[{sprintf('%.0f', advantage$pct_partisan)}%]] of the time in [[partisan]] elections."),
   str_glue(
@@ -103,7 +111,7 @@ entries <- tribble(
 
   2, "definition", "pipeline", "full",
   "The racial preference pattern holds in one sample and not the other",
-  "",
+  "published Results: Figures 5 and 6, p. 15",
   "Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates.",
   "Republican respondents marginally prefer white candidates [[in the YouGov sample]], while Democrats marginally prefer nonwhite candidates [[in both]].",
   str_glue(
@@ -123,7 +131,7 @@ entries <- tribble(
 
   3, "definition", "pipeline", "full",
   "Republican respondents do show a competence gap by election type",
-  "",
+  "published Mechanism: Figures 7 and 8, p. 17",
   "As shown in the difference column, Democratic respondents ([[but not Republican respondents]]) rate such candidates as even more competent in the absence of party labels.",
   "As shown in the difference column, Democratic respondents ([[and, for candidates who have been mayor, Republican respondents]]) rate such candidates as even more competent in the absence of party labels.",
   str_glue(
@@ -139,7 +147,7 @@ entries <- tribble(
 
   4, "quantity", "pipeline", "full",
   "The p-value on the experience-advantage comparison reproduces under no test",
-  "",
+  "published Observational evidence, p. 6",
   "This difference is not statistically significant (p = [[0.791]]).",
   str_glue("This difference is not statistically significant (p = [[{sprintf('%.3f', advantage$p_value_hc2)}]])."),
   str_glue(
@@ -152,7 +160,7 @@ entries <- tribble(
 
   5, "quantity", "pipeline", "full",
   "The number of municipalities in the mayoral election dataset",
-  "",
+  "published Information Shortcuts in Nonpartisan Elections, p. 6",
   "This dataset covers [[225]] unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes.",
   str_glue("This dataset covers [[{dataset$n_municipalities}]] unique municipalities and records background characteristics of winners and runners-up, contextual information such as electoral rules, and electoral outcomes."),
   str_glue(
@@ -165,7 +173,7 @@ entries <- tribble(
 
   6, "quantity", "pipeline", "full",
   "The range of political experience effects is stated more tightly than the estimates support",
-  "",
+  "published Results: Figure 3, p. 12",
   "Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of [[25--30]] percentage points.",
   str_glue("Relative to a candidate with no political experience, respondents prefer candidates who are City Council Members, State Legislators, Mayors, or Representatives in Congress by a margin of [[{sprintf('%.0f', 100 * min(pol_np$estimate))}--{sprintf('%.0f', 100 * max(pol_np$estimate))}]] percentage points."),
   str_glue(

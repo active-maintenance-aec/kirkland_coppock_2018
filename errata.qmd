@@ -92,8 +92,14 @@ spelled <- function(n) {
 # Numbering is the published note's and is APPEND-ONLY: an entry can already have been cited
 # by number, so a later finding is added at the end and never interleaved, renumbered,
 # merged or split.
+#
+# `claim_ids` names the ground truth rows the entry corrects, semicolon separated, and it is
+# what makes "has this finding been published?" a query over the corpus rather than a reading
+# of every note. It is empty where the entry has no ground truth row: a reference list is not
+# an extraction claim. Every id listed here is checked against the ground truth by
+# ground_truth/build_ground_truth.R, which refuses to finish on a dangling one.
 entries <- tribble(
-  ~entry, ~class, ~source, ~form, ~title, ~location, ~published, ~corrected, ~note,
+  ~entry, ~class, ~source, ~form, ~title, ~location, ~published, ~corrected, ~note, ~claim_ids,
 
   1, "label", "pipeline", "full",
   "The two ballot types are transposed in the experience-advantage comparison",
@@ -108,6 +114,7 @@ entries <- tribble(
     "The direction matters here, because the article's own argument is that nonpartisan ",
     "ballots favour the more experienced candidate: the published sentence reports the gap ",
     "running the other way."),
+  "obs_partisan_more_experienced_wins_pct;obs_nonpartisan_more_experienced_wins_pct",
 
   2, "definition", "pipeline", "full",
   "The racial preference pattern holds in one sample and not the other",
@@ -128,6 +135,7 @@ entries <- tribble(
     "ones by {sprintf('%.1f', -race_pp('Mechanical Turk', 'Republicans', 'Hispanic'))}. ",
     "A reader taking the sentence as a general finding about Republican respondents would ",
     "be taking a pattern that reverses on one of the paper's two samples."),
+  "desc_race_preference_by_respondent_party",
 
   3, "definition", "pipeline", "full",
   "Republican respondents do show a competence gap by election type",
@@ -144,6 +152,7 @@ entries <- tribble(
     "{sprintf('%.2f', republican_mayor$conf.low)} to ",
     "{sprintf('%.2f', republican_mayor$conf.high)}. The contrast the sentence draws is one ",
     "of degree rather than of presence."),
+  "desc_democrats_competence_gap_nonpartisan",
 
   4, "quantity", "pipeline", "full",
   "The p-value on the experience-advantage comparison reproduces under no test",
@@ -157,6 +166,7 @@ entries <- tribble(
     "comparison returns 0.791. The conclusion the sentence draws is unaffected: the ",
     "difference of {sprintf('%.1f', advantage$difference_pp)} percentage points is not ",
     "distinguishable from zero on any of them."),
+  "obs_experience_advantage_p_value",
 
   5, "quantity", "pipeline", "full",
   "The number of municipalities in the mayoral election dataset",
@@ -170,6 +180,7 @@ entries <- tribble(
     "exactly. No other reading of it returns 225 either, since municipalities holding more ",
     "than one election number 171, the subset used later in the paragraph covers 216, and ",
     "truncating the place code to five digits gives 213."),
+  "obs_n_municipalities",
 
   6, "quantity", "pipeline", "full",
   "The range of political experience effects is stated more tightly than the estimates support",
@@ -183,6 +194,7 @@ entries <- tribble(
     "percentage points. The claim the sentence makes is unaffected: political experience ",
     "remains by a wide margin the most consequential attribute in the figure, and the next ",
     "largest effect of any kind is {sprintf('%.1f', 100 * largest_other)} percentage points."),
+  "results_pol_exp_range_low;results_pol_exp_range_high",
 
   7, "bibliographic", "reference_audit", "brief",
   "Oliver, Ha and Callen (2012) is missing its third author",
@@ -191,9 +203,10 @@ entries <- tribble(
   "Oliver, J. E., Ha, S. E., & Callen, Z. (2012). Local Elections and the Politics of Small-Scale Democracy. Princeton: Princeton University Press.",
   paste("The book has three authors. Crossref, doi 10.23943/princeton/9780691143552.001.0001:",
         "Oliver, J. Eric; Ha, Shang E.; Callen, Zachary. The article's own in-text citation on",
-        "p. 588 reads \"Oliver et al. 2012\", which the two-author entry cannot support.")
+        "p. 588 reads \"Oliver et al. 2012\", which the two-author entry cannot support."),
+  ""
 ) |>
-  mutate(across(c(title, published, corrected, note), as.character))
+  mutate(across(c(title, published, corrected, note, claim_ids), as.character))
 
 stopifnot(nrow(entries) == max(entries$entry), !anyDuplicated(entries$entry))
 

@@ -747,6 +747,27 @@ stopifnot(length(printed_ids) == length(unique(printed_ids)),
           setequal(printed_ids, gt$claim_id),
           all(gt$claim_id %in% published_claims$claim_id))
 
+# Errata spine gate ----
+# errata.qmd names, for each published entry, the ground truth rows that entry corrects. An id
+# that no longer exists is a typo or a renamed claim, and a dangling reference in a document
+# whose whole purpose is correcting the record is worse than a build that refuses to finish.
+errata_path <- here::here("errata_entries.csv")
+if (file.exists(errata_path)) {
+  errata_ids <- read_csv(errata_path, show_col_types = FALSE) |>
+    pull(claim_ids) |>
+    str_split(";") |>
+    unlist() |>
+    str_trim()
+  errata_ids <- errata_ids[!is.na(errata_ids) & errata_ids != ""]
+  dangling_errata_ids <- setdiff(errata_ids, gt$claim_id)
+  if (length(dangling_errata_ids) > 0) {
+    stop("errata_entries.csv lists claim ids absent from the ground truth: ",
+         paste(dangling_errata_ids, collapse = ", "))
+  }
+  print(str_glue("Errata spine: {length(unique(errata_ids))} distinct claim ids listed, ",
+                 "all present in the ground truth."))
+}
+
 print(str_glue("Coverage: {length(printed_ids)} claims printed by ",
                "maintained/in_text_claims.R, {nrow(gt)} ground truth rows, ",
                "{length(must_be_covered)} pipeline and descriptive claims all covered."))

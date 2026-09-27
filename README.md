@@ -628,7 +628,7 @@ it was written.
 | Package    | Version |
 |:-----------|:--------|
 | tidyverse  | 2.0.0   |
-| estimatr   | 1.0.6   |
+| estimatr   | 2.0.1   |
 | knitr      | 1.51    |
 | kableExtra | 1.4.0   |
 | here       | 1.0.2   |

@@ -120,7 +120,7 @@ entries <- tribble(
   "The racial preference pattern holds in one sample and not the other",
   "published Results: Figures 5 and 6, p. 15",
   "Republican respondents marginally prefer white candidates while Democrats marginally prefer nonwhite candidates.",
-  "Republican respondents marginally prefer white candidates [[in the YouGov sample]], while Democrats marginally prefer nonwhite candidates [[in both]].",
+  "Republican respondents marginally prefer white candidates [[in the YouGov sample]], while Democrats marginally prefer nonwhite [[candidates in both]].",
   str_glue(
     "The Democratic half of the sentence holds everywhere: all six estimates are positive, ",
     "{race_list('Mechanical Turk', 'Democrats')} percentage points on Mechanical Turk and ",

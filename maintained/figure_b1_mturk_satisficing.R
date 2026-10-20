@@ -12,4 +12,4 @@ plot_df <- same_party_panels(mturk_clean, dv = "win",
 
 g <- conjoint_plot(plot_df, xlim = c(-0.4, 0.4), breaks = round(seq(-0.3, 0.3, 0.1), 1))
 
-save_figure(g, plot_df, "figure_b1_mturk_satisficing", width = 9, height = 8)
+save_figure(g, plot_df, "figure_b1_mturk_satisficing", width = 10, height = 7)

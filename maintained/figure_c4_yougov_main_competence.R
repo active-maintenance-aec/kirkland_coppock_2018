@@ -13,4 +13,4 @@ plot_df <- election_type_panels(yougov_clean, dv = "comp",
 
 g <- conjoint_plot(plot_df, xlim = c(-15, 15))
 
-save_figure(g, plot_df, "figure_c4_yougov_main_competence", width = 9, height = 9)
+save_figure(g, plot_df, "figure_c4_yougov_main_competence", width = 10, height = 7)

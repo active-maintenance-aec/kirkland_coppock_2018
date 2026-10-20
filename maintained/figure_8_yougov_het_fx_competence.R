@@ -21,4 +21,4 @@ plot_df <- bind_rows(
 
 g <- conjoint_plot(plot_df, xlim = c(-15, 15), by_party = TRUE)
 
-save_figure(g, plot_df, "figure_8_yougov_het_fx_competence", width = 9, height = 9)
+save_figure(g, plot_df, "figure_8_yougov_het_fx_competence", width = 10, height = 7)

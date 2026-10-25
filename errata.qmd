@@ -31,20 +31,20 @@ figure_3_np <- out("figure_3_mturk_main_candidate_pref.csv") |>
 pol_np <- filter(figure_3_np, coef_group == "Pol. Experience")
 largest_other <- max(abs(figure_3_np$estimate[figure_3_np$coef_group != "Pol. Experience"]))
 
-# Race preferences by respondent party, both samples, nonpartisan elections.
+# Race preferences by respondent party, both samples, both ballot types.
 race <- bind_rows(
   mutate(out("figure_5_mturk_het_fx_candidate_pref.csv"), sample = "Mechanical Turk"),
   mutate(out("figure_6_yougov_het_fx_candidate_pref.csv"), sample = "YouGov")
 ) |>
-  filter(panel == "Nonpartisan", coef_group == "Race", !is.na(estimate))
+  filter(panel %in% c("Nonpartisan", "Partisan"), coef_group == "Race", !is.na(estimate))
 
-race_pp <- function(sample_label, party_label, level) {
+race_pp <- function(sample_label, party_label, level, panel_label = "Nonpartisan") {
   100 * race$estimate[race$sample == sample_label & race$party == party_label &
-                        race$label == level]
+                        race$label == level & race$panel == panel_label]
 }
 
-race_list <- function(sample_label, party_label) {
-  rows <- filter(race, sample == sample_label, party == party_label)
+race_list <- function(sample_label, party_label, panel_label = "Nonpartisan") {
+  rows <- filter(race, sample == sample_label, party == party_label, panel == panel_label)
   paste0(rows$label, " ", sprintf("%+.1f", 100 * rows$estimate), collapse = ", ")
 }
 
@@ -59,6 +59,24 @@ clears <- function(party_label) {
 
 n_per_party <- sum(competence_diff$party == "Democrats")
 republican_mayor <- filter(competence_diff, party == "Republicans", label == "Mayor")
+
+# What entry 3's cell is read against: Figure 8's difference column, and the vote-choice
+# difference for the same Republican cell in Figure 5.
+competence_diff_yougov <- out("figure_8_yougov_het_fx_competence.csv") |>
+  filter(panel == "Difference", coef_group == "Pol. Experience", !is.na(estimate)) |>
+  mutate(clears_zero = conf.low > 0 | conf.high < 0)
+
+clears_yougov <- function(party_label) {
+  sum(competence_diff_yougov$clears_zero[competence_diff_yougov$party == party_label])
+}
+
+n_per_party_yougov <- sum(competence_diff_yougov$party == "Democrats")
+n_republican_cells <- n_per_party + n_per_party_yougov
+republican_mayor_vote <- out("figure_5_mturk_het_fx_candidate_pref.csv") |>
+  filter(panel == "Difference", coef_group == "Pol. Experience", party == "Republicans",
+         label == "Mayor")
+
+pol_np_sorted <- arrange(pol_np, desc(estimate))
 
 # The prose below spells small counts out, so the counts derived from the spine are
 # spelled out too rather than printed as digits.
@@ -113,7 +131,12 @@ entries <- tribble(
     "elections, across the {advantage$n_elections_total} elections the sentence identifies. ",
     "The direction matters here, because the article's own argument is that nonpartisan ",
     "ballots favour the more experienced candidate: the published sentence reports the gap ",
-    "running the other way."),
+    "running the other way. What the sentence holds up is the paragraph's verdict that this ",
+    "analysis \"paints a murkier picture\". Corrected, the gap runs the way the paper ",
+    "predicts, by {sprintf('%.1f', advantage$difference_pp)} percentage points at ",
+    "p = {sprintf('%.3f', advantage$p_value_hc2)} (entry 4), so the verdict survives on the ",
+    "absence of a difference rather than on its sign. The observational support the ",
+    "Discussion draws on is Table 1, which this entry does not touch."),
   "obs_partisan_more_experienced_wins_pct;obs_nonpartisan_more_experienced_wins_pct",
 
   2, "definition", "pipeline", "full",
@@ -134,7 +157,13 @@ entries <- tribble(
     "{sprintf('%.1f', -race_pp('Mechanical Turk', 'Republicans', 'Black'))} and to Hispanic ",
     "ones by {sprintf('%.1f', -race_pp('Mechanical Turk', 'Republicans', 'Hispanic'))}. ",
     "A reader taking the sentence as a general finding about Republican respondents would ",
-    "be taking a pattern that reverses on one of the paper's two samples."),
+    "be taking a pattern that reverses on one of the paper's two samples. The qualification ",
+    "applies under both ballots, which keeps the next sentence's \"these race and gender ",
+    "patterns do not differ much by election type\" true: in partisan elections the ",
+    "Republican estimates are {race_list('Mechanical Turk', 'Republicans', 'Partisan')} on ",
+    "Mechanical Turk and {race_list('YouGov', 'Republicans', 'Partisan')} on YouGov. Nothing ",
+    "later in the article rests on the race pattern, which it offers as one of \"some small ",
+    "patterns\"; the abstract and the Discussion rest on political and career experience."),
   "desc_race_preference_by_respondent_party",
 
   3, "definition", "pipeline", "full",
@@ -151,7 +180,22 @@ entries <- tribble(
     "nonpartisan than in partisan elections, with a 95 per cent interval of ",
     "{sprintf('%.2f', republican_mayor$conf.low)} to ",
     "{sprintf('%.2f', republican_mayor$conf.high)}. The contrast the sentence draws is one ",
-    "of degree rather than of presence."),
+    "of degree rather than of presence. What the parenthetical held up is the section's ",
+    "parallel between the two outcomes: \"the same candidate types that respondents view as ",
+    "more competent are the ones that they tend to elect at higher rates in nonpartisan ",
+    "elections.\" For Democratic respondents the parallel holds. For the corrected ",
+    "Republican cell it does not, since in Figure 5's difference column the same ",
+    "respondents are {sprintf('%.1f', -100 * republican_mayor_vote$estimate)} percentage ",
+    "points less likely to choose a former mayor in nonpartisan elections (95 per cent ",
+    "interval {sprintf('%.1f', 100 * republican_mayor_vote$conf.low)} to ",
+    "{sprintf('%.1f', 100 * republican_mayor_vote$conf.high)}). It is also one Republican ",
+    "interval in {n_republican_cells}: Figure 8's YouGov difference column has ",
+    "{clears_yougov('Republicans')} of {n_per_party_yougov} Republican intervals excluding ",
+    "zero (and {clears_yougov('Democrats')} of {n_per_party_yougov} Democratic ones), and at ",
+    "the 5 per cent level chance alone gives {sprintf('%.2f', 0.05 * n_republican_cells)} ",
+    "such intervals in {n_republican_cells}. The competence argument survives, resting on ",
+    "Democratic respondents, who are also the ones for whom the vote-choice results bear ",
+    "out the paper's main prediction."),
   "desc_democrats_competence_gap_nonpartisan",
 
   4, "quantity", "pipeline", "full",
@@ -165,7 +209,8 @@ entries <- tribble(
     "table gives {sprintf('%.3f', advantage$p_value_chisq)}, and no standard test of this ",
     "comparison returns 0.791. The conclusion the sentence draws is unaffected: the ",
     "difference of {sprintf('%.1f', advantage$difference_pp)} percentage points is not ",
-    "distinguishable from zero on any of them."),
+    "distinguishable from zero on any of them. No other sentence quotes the p-value, so ",
+    "\"not statistically significant\" is the whole of what it holds up."),
   "obs_experience_advantage_p_value",
 
   5, "quantity", "pipeline", "full",
@@ -179,7 +224,10 @@ entries <- tribble(
     "election count and the {dataset$year_first} to {dataset$year_last} span both reproduce ",
     "exactly. No other reading of it returns 225 either, since municipalities holding more ",
     "than one election number 171, the subset used later in the paragraph covers 216, and ",
-    "truncating the place code to five digits gives 213."),
+    "truncating the place code to five digits gives 213. No quantity in the article is ",
+    "computed over municipalities: Table 1 and the experience-advantage comparison count ",
+    "elections, so the correction changes the description of the dataset and nothing ",
+    "derived from it."),
   "obs_n_municipalities",
 
   6, "quantity", "pipeline", "full",
@@ -193,7 +241,14 @@ entries <- tribble(
     "{paste0(pol_np$label, ' ', sprintf('%.1f', 100 * pol_np$estimate), collapse = ', ')} ",
     "percentage points. The claim the sentence makes is unaffected: political experience ",
     "remains by a wide margin the most consequential attribute in the figure, and the next ",
-    "largest effect of any kind is {sprintf('%.1f', 100 * largest_other)} percentage points."),
+    "largest effect of any kind is {sprintf('%.1f', 100 * largest_other)} percentage points. ",
+    "The corrected upper end also bears on the sentence that follows, that candidates who ",
+    "had been mayor \"were rewarded most\": {pol_np_sorted$label[1]}'s ",
+    "{sprintf('%.1f', 100 * pol_np_sorted$estimate[1])} stands ",
+    "{sprintf('%.1f', 100 * (pol_np_sorted$estimate[1] - pol_np_sorted$estimate[2]))} points ",
+    "above the next largest, {pol_np_sorted$label[2]}'s ",
+    "{sprintf('%.1f', 100 * pol_np_sorted$estimate[2])}, a lead the published range ",
+    "understated."),
   "results_pol_exp_range_low;results_pol_exp_range_high",
 
   7, "bibliographic", "reference_audit", "brief",
@@ -203,7 +258,9 @@ entries <- tribble(
   "Oliver, J. E., Ha, S. E., & Callen, Z. (2012). Local Elections and the Politics of Small-Scale Democracy. Princeton: Princeton University Press.",
   paste("The book has three authors. Crossref, doi 10.23943/princeton/9780691143552.001.0001:",
         "Oliver, J. Eric; Ha, Shang E.; Callen, Zachary. The article's own in-text citation on",
-        "p. 588 reads \"Oliver et al. 2012\", which the two-author entry cannot support."),
+        "p. 588 reads \"Oliver et al. 2012\", which the two-author entry cannot support.",
+        "No claim in the article rests on the author list; what the correction restores is",
+        "the reference's function, that the citation leads a reader to the book it names."),
   ""
 ) |>
   mutate(across(c(title, published, corrected, note, claim_ids), as.character))

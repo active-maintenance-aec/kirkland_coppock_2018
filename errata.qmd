@@ -116,8 +116,15 @@ spelled <- function(n) {
 # of every note. It is empty where the entry has no ground truth row: a reference list is not
 # an extraction claim. Every id listed here is checked against the ground truth by
 # ground_truth/build_ground_truth.R, which refuses to finish on a dangling one.
+# corrected_values runs parallel to claim_ids, one value per id in the same order, carrying
+# the corrected quantity as a number rather than as a sentence. The sentence already holds
+# it, but only inside prose a reader has to parse. Each value comes from the same expression
+# that glues the sentence, so the two cannot be written apart, and the gate below re-checks
+# that each one is still inside the span it belongs to. An entry that corrects nothing (a
+# note, or any class other than quantity) carries NA, and so does a quantity entry whose
+# claim is not a number printed in the corrected sentence.
 entries <- tribble(
-  ~entry, ~class, ~source, ~form, ~title, ~location, ~published, ~corrected, ~note, ~claim_ids,
+  ~entry, ~class, ~source, ~form, ~title, ~location, ~published, ~corrected, ~note, ~claim_ids, ~corrected_values,
 
   1, "label", "pipeline", "full",
   "The two ballot types are transposed in the experience-advantage comparison",
@@ -137,7 +144,7 @@ entries <- tribble(
     "p = {sprintf('%.3f', advantage$p_value_hc2)} (entry 4), so the verdict survives on the ",
     "absence of a difference rather than on its sign. The observational support the ",
     "Discussion draws on is Table 1, which this entry does not touch."),
-  "obs_partisan_more_experienced_wins_pct;obs_nonpartisan_more_experienced_wins_pct",
+  "obs_partisan_more_experienced_wins_pct;obs_nonpartisan_more_experienced_wins_pct", NA_character_,
 
   2, "definition", "pipeline", "full",
   "The racial preference pattern holds in one sample and not the other",
@@ -164,7 +171,7 @@ entries <- tribble(
     "Mechanical Turk and {race_list('YouGov', 'Republicans', 'Partisan')} on YouGov. Nothing ",
     "later in the article rests on the race pattern, which it offers as one of \"some small ",
     "patterns\"; the abstract and the Discussion rest on political and career experience."),
-  "desc_race_preference_by_respondent_party",
+  "desc_race_preference_by_respondent_party", NA_character_,
 
   3, "definition", "pipeline", "full",
   "Republican respondents do show a competence gap by election type",
@@ -196,7 +203,7 @@ entries <- tribble(
     "such intervals in {n_republican_cells}. The competence argument survives, resting on ",
     "Democratic respondents, who are also the ones for whom the vote-choice results bear ",
     "out the paper's main prediction."),
-  "desc_democrats_competence_gap_nonpartisan",
+  "desc_democrats_competence_gap_nonpartisan", NA_character_,
 
   4, "quantity", "pipeline", "full",
   "The p-value on the experience-advantage comparison reproduces under no test",
@@ -211,7 +218,7 @@ entries <- tribble(
     "difference of {sprintf('%.1f', advantage$difference_pp)} percentage points is not ",
     "distinguishable from zero on any of them. No other sentence quotes the p-value, so ",
     "\"not statistically significant\" is the whole of what it holds up."),
-  "obs_experience_advantage_p_value",
+  "obs_experience_advantage_p_value", sprintf('%.3f', advantage$p_value_hc2),
 
   5, "quantity", "pipeline", "full",
   "The number of municipalities in the mayoral election dataset",
@@ -228,7 +235,7 @@ entries <- tribble(
     "computed over municipalities: Table 1 and the experience-advantage comparison count ",
     "elections, so the correction changes the description of the dataset and nothing ",
     "derived from it."),
-  "obs_n_municipalities",
+  "obs_n_municipalities", as.character(dataset$n_municipalities),
 
   6, "quantity", "pipeline", "full",
   "The range of political experience effects is stated more tightly than the estimates support",
@@ -249,7 +256,7 @@ entries <- tribble(
     "above the next largest, {pol_np_sorted$label[2]}'s ",
     "{sprintf('%.1f', 100 * pol_np_sorted$estimate[2])}, a lead the published range ",
     "understated."),
-  "results_pol_exp_range_low;results_pol_exp_range_high",
+  "results_pol_exp_range_low;results_pol_exp_range_high", str_glue("{sprintf('%.0f', 100 * min(pol_np$estimate))};{sprintf('%.0f', 100 * max(pol_np$estimate))}"),
 
   7, "bibliographic", "reference_audit", "brief",
   "Oliver, Ha and Callen (2012) is missing its third author",
@@ -261,11 +268,69 @@ entries <- tribble(
         "p. 588 reads \"Oliver et al. 2012\", which the two-author entry cannot support.",
         "No claim in the article rests on the author list; what the correction restores is",
         "the reference's function, that the citation leads a reader to the book it names."),
-  ""
+  "",
+  NA_character_
 ) |>
-  mutate(across(c(title, published, corrected, note, claim_ids), as.character))
+  mutate(across(c(title, published, corrected, note, claim_ids, corrected_values), as.character))
 
 stopifnot(nrow(entries) == max(entries$entry), !anyDuplicated(entries$entry))
+
+# Gate: corrected_values agrees with the sentence it was glued into ----
+# The column and the sentence are written from one expression, so they begin in agreement
+# and this gate exists for the edit that separates them: a value moved from one marked span
+# to another, a span reworded to carry a second number, a claim id appended without its
+# value. Each value has to be inside the span it belongs to, matched by position where the
+# counts line up, and inside SOME span where they do not. The spelled form counts as the
+# numeral, since a minimal edit sets "six" and not "6".
+marked_spans <- function(x) str_match_all(x, "\\[\\[(.*?)\\]\\]")[[1]][, 2]
+
+spelled_numbers <- c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
+                     "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen",
+                     "seventeen", "eighteen", "nineteen", "twenty")
+
+inside_span <- function(value, span) {
+  numeral <- str_detect(span, fixed(value))
+  spelled <- !is.na(suppressWarnings(as.numeric(value))) &&
+    as.numeric(value) %in% seq_along(spelled_numbers) &&
+    str_detect(span, fixed(spelled_numbers[as.numeric(value)]))
+  numeral || spelled
+}
+
+quantified <- entries |>
+  filter(!is.na(corrected_values)) |>
+  mutate(ids = str_split(claim_ids, ";"), values = str_split(corrected_values, ";"),
+         spans = map(corrected, marked_spans))
+
+stopifnot(all(lengths(quantified$ids) == lengths(quantified$values)))
+
+value_placed <- pmap_lgl(quantified, function(...) {
+  e <- list(...)
+  if (length(e$values) == length(e$spans)) {
+    all(map2_lgl(e$values, e$spans, inside_span))
+  } else {
+    all(map_lgl(e$values, \(v) any(map_lgl(e$spans, \(s) inside_span(v, s)))))
+  }
+})
+
+if (!all(value_placed)) {
+  print(quantified |> filter(!value_placed) |> select(entry, title, corrected_values, corrected))
+  stop("An entry's corrected_values are not in the spans of its corrected sentence.")
+}
+
+# An entry that changes a quantity has to say which one, and an entry that changes none may
+# not carry a value. The class is the declaration and this is where it binds. A note
+# corrects nothing, so it carries NA even where its class is quantity, and an entry with no
+# claim id has no claim to carry a value for. `unvalued` lists the quantity entries whose
+# claim is not a number printed in the corrected sentence; they carry NA by decision.
+unvalued <- integer(0)
+stopifnot(
+  all(!is.na(entries$corrected_values[entries$class == "quantity" & entries$form != "note" &
+                                        !is.na(entries$claim_ids) & entries$claim_ids != "" &
+                                        !entries$entry %in% unvalued])),
+  all(is.na(entries$corrected_values[entries$class != "quantity"])),
+  all(is.na(entries$corrected_values[entries$form == "note"])),
+  all(is.na(entries$corrected_values) | (!is.na(entries$claim_ids) & entries$claim_ids != ""))
+)
 
 # The spine's markup, resolved for this document.
 bold <- function(x) str_replace_all(x, "\\[\\[(.*?)\\]\\]", "**\\1**")

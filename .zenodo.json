@@ -17,6 +17,12 @@
   ],
   "related_identifiers": [
     {
+      "identifier": "https://github.com/active-maintenance-aec/kirkland_coppock_2018",
+      "relation": "isSupplementTo",
+      "scheme": "url",
+      "resource_type": "software"
+    },
+    {
       "identifier": "10.1007/s11109-017-9414-8",
       "relation": "isSupplementTo",
       "scheme": "doi"

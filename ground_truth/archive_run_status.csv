@@ -1,0 +1,7 @@
+pass,script,role,exit_status,outcome,stopped_at
+as_shipped,mturk_replication.R,analysis,0,clean,NA
+as_shipped,yougov_replication.R,analysis,1,error,"Error in readChar(con, 5L, useBytes = TRUE) : cannot open the connection"
+as_shipped,compare_samples_replication.R,analysis,1,error,"Error in readChar(con, 5L, useBytes = TRUE) : cannot open the connection"
+stripped,mturk_replication.R,analysis,NA,not_run,"Not run: the deposit has no cleaning script and ships no object its code builds, so the copy stripped to data plus code is the copy as shipped"
+stripped,yougov_replication.R,analysis,NA,not_run,"Not run: the deposit has no cleaning script and ships no object its code builds, so the copy stripped to data plus code is the copy as shipped"
+stripped,compare_samples_replication.R,analysis,NA,not_run,"Not run: the deposit has no cleaning script and ships no object its code builds, so the copy stripped to data plus code is the copy as shipped"

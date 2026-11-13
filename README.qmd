@@ -35,6 +35,7 @@ published_claims <- read_csv(here("ground_truth", "published_claims.csv"),
                              col_types = cols(value_paper = col_character(),
                                               .default = col_guess()))
 manifest <- read_csv(here("original_manifest.csv"), show_col_types = FALSE)
+archive_runs <- read_csv(here("ground_truth", "archive_run_status.csv"), show_col_types = FALSE)
 
 chi <- out("text_observational_chisq.csv")
 adv <- out("text_observational_experience_advantage.csv")
@@ -48,20 +49,18 @@ pearson_weighted <- corr$correlation[corr$method == "pearson" &
 n_extracted <- nrow(published_claims)
 n_claims <- nrow(gt)
 n_verifiable <- sum(!is.na(gt$match_rewrite))
-n_match <- sum(gt$match_rewrite == 1, na.rm = TRUE)
-n_miss <- sum(gt$match_rewrite == 0, na.rm = TRUE)
+n_match <- sum(gt$match_rewrite, na.rm = TRUE)
+n_miss <- sum(!gt$match_rewrite, na.rm = TRUE)
 n_paper_internal <- sum(gt$defect_locus == "paper_internal", na.rm = TRUE)
 n_archive_locus <- sum(gt$defect_locus == "archive", na.rm = TRUE)
-n_descriptive <- sum(gt$table_figure == "Descriptive")
-n_descriptive_hold <- sum(gt$table_figure == "Descriptive" & gt$match_rewrite == 1,
-                          na.rm = TRUE)
-n_descriptive_fail <- sum(gt$table_figure == "Descriptive" & gt$match_rewrite == 0,
-                          na.rm = TRUE)
-n_no_threshold <- sum(gt$table_figure == "Descriptive" & is.na(gt$match_rewrite) &
+n_descriptive <- sum(gt$claim_type == "descriptive")
+n_descriptive_hold <- sum(gt$holds, na.rm = TRUE)
+n_descriptive_fail <- sum(!gt$holds, na.rm = TRUE)
+n_no_threshold <- sum(gt$claim_type == "descriptive" & is.na(gt$holds) &
                         is.na(gt$defect_locus))
 n_a1_absent <- sum(str_starts(gt$claim_id, "table_a1_") & is.na(gt$match_rewrite))
 n_paper_internal_descriptive <- sum(gt$defect_locus == "paper_internal" &
-                                      gt$table_figure == "Descriptive", na.rm = TRUE)
+                                      gt$claim_type == "descriptive", na.rm = TRUE)
 
 # The errata spine, written by errata.qmd. Every count of the corrections below reads it,
 # so the README and the note cannot come to disagree about how many there are.
@@ -111,7 +110,7 @@ This repository holds the actively maintained replication code for Kirkland and 
 
 **`recovered/` is different and is committed.** The observational analysis behind Table 1 depends on a data file and a script that the deposit does not contain, though its own README lists both. The authors supplied them, and since they exist nowhere else this repository carries them.
 
-**Repository layout.** `maintained/` is the maintained rewrite: one script per published table or figure, writing to `output/`, which is committed so a reader can compare a fresh run against it without downloading anything. `ground_truth/` ties every published number to the code that produces it, starting from `published_claims.csv`, an extraction of every numeric token in the article and the online appendix. `maintained/in_text_claims.R` prints each of those numbers beside the sentence that states it. `original/` is created by the download script and is deliberately absent from the repository. `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note listing the article's misstated numbers, and writes `errata_entries.csv`, the one place each correction is written down, which this report counts from rather than keeping its own tally. This README is the reproducibility report, also available as a PDF in `report/`.
+**Repository layout.** `maintained/` is the maintained rewrite: one script per published table or figure, writing to `output/`, which is committed so a reader can compare a fresh run against it without downloading anything. `ground_truth/` ties every published number to the code that produces it, starting from `published_claims.csv`, an extraction of every numeric token in the article and the online appendix; `build_ground_truth.R` writes the ground truth and `float_coverage.csv` from it, and `run_archive.R` reruns the deposited scripts from a scratch copy and writes `archive_run_status.csv` and `archive_overwrites.csv`. `maintained/in_text_claims.R` prints each of those numbers beside the sentence that states it. `original/` is created by the download script and is deliberately absent from the repository. `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note listing the article's misstated numbers, and writes `errata_entries.csv`, the one place each correction is written down, which this report counts from rather than keeping its own tally. This README is the reproducibility report, also available as a PDF in `report/`.
 
 **License.** CC0 1.0 Universal, matching the terms of the deposit this repository maintains, so nothing in the chain is more restrictive than the archive itself. See `LICENSE`.
 
@@ -151,7 +150,7 @@ Not as deposited, and the reasons are all about files rather than about code.
 
 **Every data path in the archive is mis-cased.** The scripts call `load("mturk_replication.rdata")` and `load("base_categories.rdata")`; the deposited files are `mturk_replication.RData` and `base_categories.RData`. macOS and Windows do not care. Linux does, which is where most people who clone a replication archive today are running it.
 
-With the YouGov file renamed, all three deposited scripts run to completion in a current R and produce their figures. The only warning is `geom_errorbarh()`, deprecated in ggplot2 4.0.0. Nothing in the archive writes a file, so running it leaves the deposit untouched, and re-verifying `original/` against the manifest after a full run confirms all `r nrow(manifest)` files unchanged.
+As shipped, `r spelled(sum(archive_runs$pass == "as_shipped" & archive_runs$outcome == "clean"))` of the `r spelled(sum(archive_runs$pass == "as_shipped"))` deposited analysis scripts runs clean on a case-insensitive filesystem, as `ground_truth/run_archive.R` records it. With the YouGov file renamed, all three run to completion in a current R and produce their figures. The only warning is `geom_errorbarh()`, deprecated in ggplot2 4.0.0. Nothing in the archive writes a file, so running it leaves the deposit untouched, and re-verifying `original/` against the manifest after a full run confirms all `r nrow(manifest)` files unchanged.
 
 ### Does the maintained rewrite reproduce the paper?
 
@@ -270,11 +269,17 @@ The rewrite corrects no analytical error in the deposited code, because none of 
 The ground truth carries one row per claim either instrument can reach: `r n_claims` rows against the `r n_extracted` numeric tokens extracted from the article and appendix. The claims left out are scale endpoints and category labels the deposit cannot reach, and numbers the article takes from other papers; they are recorded in `published_claims.csv` and verified against the sources they come from.
 
 ```{r gt-summary-table}
+# Rows are grouped by the float a cell sits in, with every descriptive claim in one group
+# and every other in-text quantity in another, so no row can fall out of the count when
+# a location is reworded.
 gt_summary <- gt |>
-  mutate(Verdict = case_when(match_rewrite == 1 ~ "Matches",
-                             match_rewrite == 0 ~ "Does not match",
+  mutate(Component = case_when(claim_type == "descriptive" ~ "Descriptive claims",
+                               str_detect(location, "^(Table|Figure) [0-9A-C.]+$") ~ location,
+                               .default = "In-text quantities"),
+         Verdict = case_when(match_rewrite ~ "Matches",
+                             !match_rewrite ~ "Does not match",
                              .default = "Not evaluable")) |>
-  count(`Table or figure` = table_figure, Verdict) |>
+  count(Component, Verdict) |>
   pivot_wider(names_from = Verdict, values_from = n, values_fill = 0)
 
 k <- kable(gt_summary, booktabs = TRUE,
@@ -291,7 +296,7 @@ Every row that does not match, or that could not be evaluated for a reason speci
 
 ```{r gt-detail-table}
 k <- gt |>
-  filter(match_rewrite == 0 |
+  filter(!match_rewrite |
            (is.na(match_rewrite) & !str_starts(claim_id, "table_a1_"))) |>
   transmute(Claim = claim, Published = replace_na(value_paper, "--"),
             Pipeline = if_else(is.na(value_rewrite), "--",
@@ -421,7 +426,7 @@ knitr::include_graphics(fig_img("text_mturk_yougov_correlation"))
 
 Descriptive claims get a computed truth value rather than a number, and the evidence behind it is printed on the line beneath. A claim that reduces to a boolean gets a verdict; "relatively muted", "similarly small" and "do not differ much" set no threshold, so those blocks print the distribution and no verdict, because a verdict would invent the threshold the sentence withholds.
 
-Coverage is a gate rather than a convention. Each claim prints one line of the form `CLAIM <id> = <value> || <label>`, and that printed line is the only link between a block and the extraction. `build_ground_truth.R` runs the claims file non-interactively, reads the ids back off the lines it actually printed, and halts unless every pipeline and descriptive row of `published_claims.csv` appears among them, unless every id printed is one the article makes, and unless each has a ground truth row. Nothing in the gate parses a comment: a comment naming the claims a block covers would prove only that someone wrote the comment, and it can go stale on its own while the code beside it changes.
+Coverage is a gate rather than a convention. Each claim prints one line of the form `CLAIM <id> = <value> || [verdict] <label>`, and that printed line is the only link between a block and the extraction. The verdict comes from `excheckr`, which derives the expectation from `published_claims.csv` and `errata_entries.csv` rather than from anything typed in the claims file: a claim matches the article, or matches the correction a published quantity erratum gives, or is one of the exemptions a block declares where a reader sees it (an unseeded draw, a value computed to test a sentence rather than to equal its token, or a number the deposit has no counterpart for). Any other disagreement stops the run. `build_ground_truth.R` runs the claims file non-interactively, reads the ids back off the lines it actually printed, and halts unless they are exactly the rows `published_claims.csv` marks `needs_block`, which include every pipeline and descriptive row, and unless each has a ground truth row. Nothing in the gate parses a comment: a comment naming the claims a block covers would prove only that someone wrote the comment, and it can go stale on its own while the code beside it changes.
 
 ---
 

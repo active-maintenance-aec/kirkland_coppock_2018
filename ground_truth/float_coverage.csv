@@ -1,0 +1,16 @@
+float,published_numbers,covered,reproduced_by_rewrite,reproduced_by_archive,plotted,plotted_reproduced,note
+Table 1,30,30,30,NA,NA,NA,NA
+Figure 1,0,0,0,0,NA,NA,"An example stimulus screen for a partisan election; the two candidate ages it shows are levels of the age attribute in Table 2, not data."
+Figure 2,0,0,0,0,NA,NA,"An example stimulus screen for a nonpartisan election; the two candidate ages it shows are levels of the age attribute in Table 2, not data."
+Table 2,4,4,4,NA,NA,NA,NA
+Figure 3,0,0,0,NA,47,47,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure 4,0,0,0,NA,56,56,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure 5,0,0,0,NA,94,94,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure 6,0,0,0,NA,112,112,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure 7,0,0,0,NA,94,94,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure 8,0,0,0,NA,112,112,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Table A.1,48,48,8,NA,NA,NA,NA
+Figure B.1,0,0,0,NA,51,51,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure B.2,0,0,0,NA,60,60,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure C.3,0,0,0,NA,47,47,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."
+Figure C.4,0,0,0,NA,56,56,"Prints no numbers on its face; plotted counts the estimates drawn, from the rewrite's CSV, and the README records all of them agreeing with the archive's own estimates."

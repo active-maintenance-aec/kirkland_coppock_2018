@@ -15,7 +15,10 @@
 - [Maintained Rewrite Verification](#maintained-rewrite-verification)
 - [R Environment](#r-environment)
 
-**Archived at Zenodo:** [doi:10.5281/zenodo.24168401](https://doi.org/10.5281/zenodo.24168401). This DOI always resolves to the latest release of the maintained version.
+**Archived at Zenodo:**
+[doi:10.5281/zenodo.24168401](https://doi.org/10.5281/zenodo.24168401).
+This DOI always resolves to the latest release of the maintained
+version.
 
 *Drafted by Claude Opus 5 under the supervision of Alex Coppock.*
 
@@ -56,9 +59,12 @@ committed so a reader can compare a fresh run against it without
 downloading anything. `ground_truth/` ties every published number to the
 code that produces it, starting from `published_claims.csv`, an
 extraction of every numeric token in the article and the online
-appendix. `maintained/in_text_claims.R` prints each of those numbers
-beside the sentence that states it. `original/` is created by the
-download script and is deliberately absent from the repository.
+appendix; `build_ground_truth.R` writes the ground truth and
+`float_coverage.csv` from it, and `run_archive.R` reruns the deposited
+scripts from a scratch copy and writes `archive_run_status.csv` and
+`archive_overwrites.csv`. `maintained/in_text_claims.R` prints each of
+those numbers beside the sentence that states it. `original/` is created
+by the download script and is deliberately absent from the repository.
 `errata.qmd` renders `kirkland_coppock_2018_errata.pdf`, a short note
 listing the article’s misstated numbers, and writes
 `errata_entries.csv`, the one place each correction is written down,
@@ -166,12 +172,13 @@ the deposited files are `mturk_replication.RData` and
 which is where most people who clone a replication archive today are
 running it.
 
-With the YouGov file renamed, all three deposited scripts run to
-completion in a current R and produce their figures. The only warning is
-`geom_errorbarh()`, deprecated in ggplot2 4.0.0. Nothing in the archive
-writes a file, so running it leaves the deposit untouched, and
-re-verifying `original/` against the manifest after a full run confirms
-all 10 files unchanged.
+As shipped, one of the three deposited analysis scripts runs clean on a
+case-insensitive filesystem, as `ground_truth/run_archive.R` records it.
+With the YouGov file renamed, all three run to completion in a current R
+and produce their figures. The only warning is `geom_errorbarh()`,
+deprecated in ggplot2 4.0.0. Nothing in the archive writes a file, so
+running it leaves the deposit untouched, and re-verifying `original/`
+against the manifest after a full run confirms all 10 files unchanged.
 
 ### Does the maintained rewrite reproduce the paper?
 
@@ -385,19 +392,13 @@ the deposit cannot reach, and numbers the article takes from other
 papers; they are recorded in `published_claims.csv` and verified against
 the sources they come from.
 
-| Table or figure                    | Not evaluable | Does not match | Matches |
-|:-----------------------------------|--------------:|---------------:|--------:|
-| Analysis, footnote 5               |             2 |              0 |       0 |
-| Descriptive                        |             7 |              2 |      32 |
-| Design                             |             0 |              0 |      16 |
-| Discussion                         |             0 |              0 |       1 |
-| Figure 3                           |             0 |              2 |       2 |
-| Figures 3 to 8, B.1, B.2, C.3, C.4 |             0 |              0 |       1 |
-| Figures 5 and 6                    |             1 |              0 |       0 |
-| Observational text                 |             2 |              4 |      10 |
-| Table 1                            |             0 |              0 |      30 |
-| Table 2                            |             0 |              0 |       4 |
-| Table A.1                          |            40 |              0 |       8 |
+| Component          | Does not match | Matches | Not evaluable |
+|:-------------------|---------------:|--------:|--------------:|
+| Descriptive claims |              2 |      32 |             7 |
+| In-text quantities |              6 |      30 |             5 |
+| Table 1            |              0 |      30 |             0 |
+| Table 2            |              0 |       4 |             0 |
+| Table A.1          |              0 |       8 |            40 |
 
 Ground truth verification by component (164 rows)
 
@@ -605,15 +606,23 @@ the distribution and no verdict, because a verdict would invent the
 threshold the sentence withholds.
 
 Coverage is a gate rather than a convention. Each claim prints one line
-of the form `CLAIM <id> = <value> || <label>`, and that printed line is
-the only link between a block and the extraction. `build_ground_truth.R`
-runs the claims file non-interactively, reads the ids back off the lines
-it actually printed, and halts unless every pipeline and descriptive row
-of `published_claims.csv` appears among them, unless every id printed is
-one the article makes, and unless each has a ground truth row. Nothing
-in the gate parses a comment: a comment naming the claims a block covers
-would prove only that someone wrote the comment, and it can go stale on
-its own while the code beside it changes.
+of the form `CLAIM <id> = <value> || [verdict] <label>`, and that
+printed line is the only link between a block and the extraction. The
+verdict comes from `excheckr`, which derives the expectation from
+`published_claims.csv` and `errata_entries.csv` rather than from
+anything typed in the claims file: a claim matches the article, or
+matches the correction a published quantity erratum gives, or is one of
+the exemptions a block declares where a reader sees it (an unseeded
+draw, a value computed to test a sentence rather than to equal its
+token, or a number the deposit has no counterpart for). Any other
+disagreement stops the run. `build_ground_truth.R` runs the claims file
+non-interactively, reads the ids back off the lines it actually printed,
+and halts unless they are exactly the rows `published_claims.csv` marks
+`needs_block`, which include every pipeline and descriptive row, and
+unless each has a ground truth row. Nothing in the gate parses a
+comment: a comment naming the claims a block covers would prove only
+that someone wrote the comment, and it can go stale on its own while the
+code beside it changes.
 
 ------------------------------------------------------------------------
 
@@ -631,10 +640,10 @@ it was written.
 |:-----------|:--------|
 | tidyverse  | 2.0.0   |
 | estimatr   | 2.0.1   |
-| knitr      | 1.51    |
-| kableExtra | 1.4.0   |
+| knitr      | 1.52    |
+| kableExtra | 1.4.1   |
 | here       | 1.0.2   |
 
 Key package versions
 
-R version: R version 4.6.0 (2026-04-24)
+R version: R version 4.6.2 (2026-10-29)
